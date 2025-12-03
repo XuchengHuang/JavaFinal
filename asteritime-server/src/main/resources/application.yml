@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: asteritime-server
+  
+  datasource:
+    url: jdbc:mysql://localhost:3306/asteritime?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: root
+    password: lunhui6918
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+logging:
+  level:
+    com.asteritime: DEBUG
+    org.springframework.web: INFO
+
+
