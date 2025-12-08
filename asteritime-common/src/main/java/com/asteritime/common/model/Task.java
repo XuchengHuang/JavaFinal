@@ -67,6 +67,11 @@ public class Task {
     private LocalDateTime plannedEndTime;
     
     /**
+     * 实际开始时间
+     */
+    private LocalDateTime actualStartTime;
+    
+    /**
      * 实际结束时间
      */
     private LocalDateTime actualEndTime;
@@ -173,6 +178,14 @@ public class Task {
     
     public void setPlannedEndTime(LocalDateTime plannedEndTime) {
         this.plannedEndTime = plannedEndTime;
+    }
+    
+    public LocalDateTime getActualStartTime() {
+        return actualStartTime;
+    }
+    
+    public void setActualStartTime(LocalDateTime actualStartTime) {
+        this.actualStartTime = actualStartTime;
     }
     
     public LocalDateTime getActualEndTime() {

@@ -3,9 +3,9 @@ spring:
     name: asteritime-server
   
   datasource:
-    url: jdbc:mysql://localhost:3306/asteritime?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/asteritime?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
-    password: lunhui6918
+    password: 216699
     driver-class-name: com.mysql.cj.jdbc.Driver
   
   jpa:

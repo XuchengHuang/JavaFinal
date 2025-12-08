@@ -5,6 +5,7 @@ import com.asteritime.common.model.TaskStatus;
 import com.asteritime.common.model.User;
 import com.asteritime.server.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -207,19 +208,25 @@ public class TaskController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
-        // 验证任务是否属于当前用户
-        if (!taskService.findByIdAndUserId(id, userId).isPresent()) {
+        try {
+            // 使用智能更新方法，保留已有字段并根据状态变更自动设置时间
+            Task updated = taskService.updateTask(id, userId, task);
+            return ResponseEntity.ok(updated);
+        } catch (DataIntegrityViolationException e) {
+            // 处理数据库约束违反错误（如必填字段为空）
+            return ResponseEntity.badRequest().body(null);
+        } catch (RuntimeException e) {
+            // 检查是否是状态变更验证错误
+            if (e.getMessage() != null && (e.getMessage().contains("待办任务") || e.getMessage().contains("进行中的任务"))) {
+                return ResponseEntity.badRequest().body(null);
+            }
+            // 检查是否是数据完整性错误（如必填字段为空）
+            if (e.getMessage() != null && e.getMessage().contains("不能为空")) {
+                return ResponseEntity.badRequest().body(null);
+            }
+            // 任务不存在或不属于当前用户
             return ResponseEntity.notFound().build();
         }
-        
-        task.setId(id);
-        // 确保用户关联正确
-        User user = new User();
-        user.setId(userId);
-        task.setUser(user);
-        
-        Task updated = taskService.save(task);
-        return ResponseEntity.ok(updated);
     }
     
     /**

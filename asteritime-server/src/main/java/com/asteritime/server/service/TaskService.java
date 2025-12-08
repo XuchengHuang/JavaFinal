@@ -1,6 +1,7 @@
 package com.asteritime.server.service;
 
 import com.asteritime.common.model.Task;
+import com.asteritime.common.model.TaskStatus;
 import com.asteritime.common.model.User;
 import com.asteritime.server.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,6 +113,137 @@ public class TaskService {
      */
     public Task save(Task task) {
         return taskRepository.save(task);
+    }
+
+    /**
+     * 更新任务（智能合并更新，保留已有字段，根据状态变更自动设置时间）
+     * 
+     * @param id 任务ID
+     * @param userId 用户ID（用于验证权限）
+     * @param updatedTask 包含更新字段的任务对象（可能只包含部分字段）
+     * @return 更新后的任务
+     */
+    public Task updateTask(Long id, Long userId, Task updatedTask) {
+        // 获取现有任务
+        Optional<Task> existingTaskOpt = taskRepository.findByIdAndUser_Id(id, userId);
+        if (!existingTaskOpt.isPresent()) {
+            throw new RuntimeException("任务不存在或不属于当前用户");
+        }
+        
+        Task existingTask = existingTaskOpt.get();
+        TaskStatus oldStatus = existingTask.getStatus();
+        TaskStatus newStatus = updatedTask.getStatus();
+        
+        // 确保existingTask的必填字段不为null（从数据库加载的应该都有值，但作为安全措施）
+        if (existingTask.getQuadrant() == null) {
+            throw new RuntimeException("任务象限不能为空，任务数据可能已损坏");
+        }
+        if (existingTask.getStatus() == null) {
+            throw new RuntimeException("任务状态不能为空，任务数据可能已损坏");
+        }
+        
+        // 更新基本字段（如果前端提供了）
+        // 注意：只更新前端明确提供的非null字段，避免覆盖已有值
+        if (updatedTask.getTitle() != null && !updatedTask.getTitle().isEmpty()) {
+            existingTask.setTitle(updatedTask.getTitle());
+        }
+        if (updatedTask.getDescription() != null) {
+            existingTask.setDescription(updatedTask.getDescription());
+        }
+        // quadrant是必填字段，如果前端明确提供了非null值，才更新
+        if (updatedTask.getQuadrant() != null) {
+            existingTask.setQuadrant(updatedTask.getQuadrant());
+        }
+        // 只有当前端明确提供了type且type的id不为null时才更新
+        if (updatedTask.getType() != null && updatedTask.getType().getId() != null) {
+            existingTask.setType(updatedTask.getType());
+        }
+        // 只有当前端明确提供了recurrenceRule且recurrenceRule的id不为null时才更新
+        if (updatedTask.getRecurrenceRule() != null && updatedTask.getRecurrenceRule().getId() != null) {
+            existingTask.setRecurrenceRule(updatedTask.getRecurrenceRule());
+        }
+        if (updatedTask.getPlannedStartTime() != null) {
+            existingTask.setPlannedStartTime(updatedTask.getPlannedStartTime());
+        }
+        if (updatedTask.getPlannedEndTime() != null) {
+            existingTask.setPlannedEndTime(updatedTask.getPlannedEndTime());
+        }
+        
+        // 处理状态变更和时间字段
+        if (newStatus != null && newStatus != oldStatus) {
+            // 验证：TODO状态不能直接变为DONE
+            if (oldStatus == TaskStatus.TODO && newStatus == TaskStatus.DONE) {
+                throw new RuntimeException("待办任务需要先变为'进行中'状态，才能标记为'已完成'");
+            }
+            
+            // 验证：DOING状态不能变为TODO
+            if (oldStatus == TaskStatus.DOING && newStatus == TaskStatus.TODO) {
+                throw new RuntimeException("进行中的任务不能改回'待办'状态");
+            }
+            
+            existingTask.setStatus(newStatus);
+            
+            // 如果状态变为DOING
+            if (newStatus == TaskStatus.DOING) {
+                // 如果前端明确提供了actualStartTime（非null），使用前端提供的值
+                // 否则，如果当前actualStartTime为空，则设置为当前时间
+                if (updatedTask.getActualStartTime() != null) {
+                    existingTask.setActualStartTime(updatedTask.getActualStartTime());
+                } else if (existingTask.getActualStartTime() == null) {
+                    existingTask.setActualStartTime(LocalDateTime.now());
+                }
+                // 如果已有actualStartTime且前端没有提供新值，保持原有值不变
+            }
+            
+            // 如果状态变为DONE
+            if (newStatus == TaskStatus.DONE) {
+                // 如果前端明确提供了actualEndTime（非null），使用前端提供的值
+                // 否则，如果当前actualEndTime为空，则设置为当前时间
+                if (updatedTask.getActualEndTime() != null) {
+                    existingTask.setActualEndTime(updatedTask.getActualEndTime());
+                } else if (existingTask.getActualEndTime() == null) {
+                    existingTask.setActualEndTime(LocalDateTime.now());
+                }
+                // 如果已有actualEndTime且前端没有提供新值，保持原有值不变
+                
+                // 确保actualStartTime不为空（如果为空则设置为当前时间）
+                // 注意：这里不覆盖已有的actualStartTime，只处理为空的情况
+                if (existingTask.getActualStartTime() == null) {
+                    existingTask.setActualStartTime(LocalDateTime.now());
+                }
+            }
+        } else if (newStatus != null) {
+            // 状态没有变化，但前端可能更新了时间字段
+            existingTask.setStatus(newStatus);
+        }
+        
+        // 如果状态没有变更，但前端明确提供了时间字段，则更新（用于手动编辑时间的情况）
+        // 注意：只有在状态没有变更的情况下才允许手动更新时间字段
+        // 如果状态有变更，时间字段已经在上面根据状态变更逻辑处理了
+        if (newStatus == null || newStatus == oldStatus) {
+            // 如果前端明确提供了actualStartTime（非null），使用前端提供的值
+            if (updatedTask.getActualStartTime() != null) {
+                existingTask.setActualStartTime(updatedTask.getActualStartTime());
+            }
+            
+            // 如果前端明确提供了actualEndTime（非null），使用前端提供的值
+            if (updatedTask.getActualEndTime() != null) {
+                existingTask.setActualEndTime(updatedTask.getActualEndTime());
+            }
+        }
+        
+        // 保存前再次验证必填字段
+        if (existingTask.getQuadrant() == null) {
+            throw new RuntimeException("任务象限不能为空");
+        }
+        if (existingTask.getStatus() == null) {
+            throw new RuntimeException("任务状态不能为空");
+        }
+        if (existingTask.getTitle() == null || existingTask.getTitle().isEmpty()) {
+            throw new RuntimeException("任务标题不能为空");
+        }
+        
+        return taskRepository.save(existingTask);
     }
 
     /**

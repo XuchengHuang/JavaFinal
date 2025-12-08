@@ -51,12 +51,6 @@
             <version>8.0.33</version>
         </dependency>
         
-        <!-- CORS -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        
         <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
