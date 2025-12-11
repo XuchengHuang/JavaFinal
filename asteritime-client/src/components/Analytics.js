@@ -1,24 +1,41 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { getTasks } from '../api/task';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { getJournalEntriesByDate, getJournalEntriesByDateRange } from '../api/journal';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
+import { getTodayLocalDateString } from '../utils/dateUtils';
 import './Analytics.css';
+
+// 饼状图颜色
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
+
+// 四象限颜色映射
+const QUADRANT_COLORS = {
+  1: '#FF6B9D', // 重要且紧急 - 粉色
+  2: '#A8E6CF', // 重要不紧急 - 浅绿色
+  3: '#FFD93D', // 紧急不重要 - 黄色
+  4: '#95E1D3', // 不重要不紧急 - 浅蓝色
+};
+
+// 四象限名称映射
+const QUADRANT_NAMES = {
+  1: '重要且紧急',
+  2: '重要不紧急',
+  3: '紧急不重要',
+  4: '不重要不紧急',
+};
 
 function Analytics() {
   const [tasks, setTasks] = useState([]);
+  const [journalEntries, setJournalEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedDelayCancel, setSelectedDelayCancel] = useState(null);
   const [selectedStatusComparison, setSelectedStatusComparison] = useState(null);
-  // 获取今天的日期字符串（YYYY-MM-DD格式，使用本地时间）
-  const getTodayDateString = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const [selectedDate, setSelectedDate] = useState(getTodayDateString());
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'plan', 'focus', 'recurring'
+  
+  const [selectedDate, setSelectedDate] = useState(getTodayLocalDateString());
+  const [focusSelectedDate, setFocusSelectedDate] = useState(getTodayLocalDateString()); // 专注标签页的日期选择
+  const [overviewSelectedDate, setOverviewSelectedDate] = useState(getTodayLocalDateString()); // 概述标签页的日期选择
   const [viewMode, setViewMode] = useState('daily'); // 'daily' or 'weekly'
 
   // 格式化本地时间为 YYYY-MM-DDTHH:mm:ss 格式（不带时区）
@@ -45,43 +62,87 @@ function Analytics() {
     };
   };
 
-  // 获取本周的日期范围（使用本地时间）
-  const getWeekRange = () => {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(today.setDate(diff));
-    monday.setHours(0, 0, 0, 0);
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
-    return {
-      startTime: formatLocalDateTime(monday),
-      endTime: formatLocalDateTime(sunday),
-    };
-  };
 
-  // 加载任务
+  // 加载任务和日记数据
   useEffect(() => {
-    const loadTasks = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        let range;
-        if (viewMode === 'daily') {
-          // 解析选择的日期字符串（YYYY-MM-DD格式）
-          const dateParts = selectedDate.split('-');
+        
+        // 概述标签页：加载指定日期的任务
+        if (activeTab === 'overview') {
+          // 根据选择的日期加载任务
+          const dateParts = overviewSelectedDate.split('-');
           const year = parseInt(dateParts[0], 10);
-          const month = parseInt(dateParts[1], 10) - 1; // 月份从0开始
+          const month = parseInt(dateParts[1], 10) - 1;
           const day = parseInt(dateParts[2], 10);
           
           const start = new Date(year, month, day, 0, 0, 0);
           const end = new Date(year, month, day, 23, 59, 59);
           
-          range = {
+          const range = {
             startTime: formatLocalDateTime(start),
             endTime: formatLocalDateTime(end),
           };
-        } else {
+          
+          const allTasks = await getTasks({
+            startTime: range.startTime,
+            endTime: range.endTime,
+          });
+          setTasks(allTasks || []);
+        } 
+        // 计划标签页：根据viewMode加载指定范围的任务
+        else if (activeTab === 'plan') {
+          let range;
+          if (viewMode === 'daily') {
+            // 解析选择的日期字符串（YYYY-MM-DD格式）
+            const dateParts = selectedDate.split('-');
+            const year = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1; // 月份从0开始
+            const day = parseInt(dateParts[2], 10);
+            
+            const start = new Date(year, month, day, 0, 0, 0);
+            const end = new Date(year, month, day, 23, 59, 59);
+            
+            range = {
+              startTime: formatLocalDateTime(start),
+              endTime: formatLocalDateTime(end),
+            };
+          } else {
+            const today = new Date();
+            const day = today.getDay();
+            const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+            const monday = new Date(today.setDate(diff));
+            monday.setHours(0, 0, 0, 0);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            sunday.setHours(23, 59, 59, 999);
+            range = {
+              startTime: formatLocalDateTime(monday),
+              endTime: formatLocalDateTime(sunday),
+            };
+          }
+          
+          // 加载任务
+          const allTasks = await getTasks({
+            startTime: range.startTime,
+            endTime: range.endTime,
+          });
+          setTasks(allTasks || []);
+        }
+        // 专注标签页：加载指定日期的日记数据
+        else if (activeTab === 'focus') {
+          // 加载选择日期的日记数据
+          const entries = await getJournalEntriesByDate(focusSelectedDate);
+          setJournalEntries(entries || []);
+        }
+        
+        // 加载日记数据（用于专注统计，如果不在专注标签页也需要加载）
+        if (activeTab !== 'focus' && viewMode === 'daily') {
+          const entries = await getJournalEntriesByDate(selectedDate);
+          setJournalEntries(entries || []);
+        } else if (activeTab !== 'focus' && viewMode === 'weekly') {
+          // 周报：计算开始和结束日期
           const today = new Date();
           const day = today.getDay();
           const diff = today.getDate() - day + (day === 0 ? -6 : 1);
@@ -90,25 +151,21 @@ function Analytics() {
           const sunday = new Date(monday);
           sunday.setDate(monday.getDate() + 6);
           sunday.setHours(23, 59, 59, 999);
-          range = {
-            startTime: formatLocalDateTime(monday),
-            endTime: formatLocalDateTime(sunday),
-          };
+          
+          const startDateStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+          const endDateStr = `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, '0')}-${String(sunday.getDate()).padStart(2, '0')}`;
+          const entries = await getJournalEntriesByDateRange(startDateStr, endDateStr);
+          setJournalEntries(entries || []);
         }
-        const allTasks = await getTasks({
-          startTime: range.startTime,
-          endTime: range.endTime,
-        });
-        setTasks(allTasks);
       } catch (error) {
-        console.error('加载任务失败:', error);
+        console.error('加载数据失败:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadTasks();
-  }, [viewMode, selectedDate]);
+    loadData();
+  }, [activeTab, viewMode, selectedDate, focusSelectedDate, overviewSelectedDate]);
 
   // 解析时间字符串为本地时间
   const parseLocalDateTime = (dateString) => {
@@ -130,7 +187,7 @@ function Analytics() {
   };
 
   // 计算任务时长（分钟）
-  const calculateTaskDuration = (task) => {
+  const calculateTaskDuration = useCallback((task) => {
     if (!task.plannedStartTime || !task.plannedEndTime) return 0;
     const start = parseLocalDateTime(task.plannedStartTime);
     const end = parseLocalDateTime(task.plannedEndTime);
@@ -138,7 +195,7 @@ function Analytics() {
     const duration = Math.max((end - start) / (1000 * 60), 0);
     // 确保返回有效的数字
     return isNaN(duration) ? 0 : duration;
-  };
+  }, []);
 
   // 格式化时长显示
   const formatDuration = (minutes) => {
@@ -187,7 +244,7 @@ function Analytics() {
       ...item,
       percentage: totalDuration > 0 ? ((item.duration / totalDuration) * 100).toFixed(1) : 0,
     })).sort((a, b) => b.duration - a.duration);
-  }, [tasks]);
+  }, [tasks, calculateTaskDuration]);
 
   // 统计延期和取消的任务时长（日报）
   const dailyDelayCancelStats = useMemo(() => {
@@ -239,7 +296,7 @@ function Analytics() {
     }
 
     return stats.sort((a, b) => b.duration - a.duration);
-  }, [tasks]);
+  }, [tasks, calculateTaskDuration]);
 
   // 对比已完成、延期、取消的任务时长（日报）
   const dailyStatusComparisonStats = useMemo(() => {
@@ -312,7 +369,7 @@ function Analytics() {
       const order = { 'DONE': 1, 'DELAY': 2, 'CANCEL': 3 };
       return order[a.status] - order[b.status];
     });
-  }, [tasks]);
+  }, [tasks, calculateTaskDuration]);
 
   // 按类别统计时长（周报）- 统计所有有计划时间的任务（包括计划中的和已完成的）
   const weeklyCategoryStats = useMemo(() => {
@@ -360,10 +417,210 @@ function Analytics() {
       ...item,
       percentage: totalDuration > 0 ? ((item.totalDuration / totalDuration) * 100).toFixed(1) : 0,
     })).sort((a, b) => b.totalDuration - a.totalDuration);
-  }, [tasks]);
+  }, [tasks, calculateTaskDuration]);
 
-  // 饼状图颜色
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
+  // 按四象限统计已完成任务（概述标签页）
+  const completedTasksByQuadrant = useMemo(() => {
+    const quadrantMap = new Map();
+    
+    tasks.forEach(task => {
+      // 只统计已完成的任务
+      if (task.status !== 'DONE') return;
+      
+      // 如果选择了日期，只统计该日期的任务
+      if (activeTab === 'overview' && overviewSelectedDate) {
+        // 检查任务的日期（优先使用plannedStartTime，如果没有则使用createdAt）
+        let taskDateStr = null;
+        if (task.plannedStartTime) {
+          const taskDate = parseLocalDateTime(task.plannedStartTime);
+          if (taskDate) {
+            const year = taskDate.getFullYear();
+            const month = String(taskDate.getMonth() + 1).padStart(2, '0');
+            const day = String(taskDate.getDate()).padStart(2, '0');
+            taskDateStr = `${year}-${month}-${day}`;
+          }
+        } else if (task.createdAt) {
+          const taskDate = parseLocalDateTime(task.createdAt);
+          if (taskDate) {
+            const year = taskDate.getFullYear();
+            const month = String(taskDate.getMonth() + 1).padStart(2, '0');
+            const day = String(taskDate.getDate()).padStart(2, '0');
+            taskDateStr = `${year}-${month}-${day}`;
+          }
+        }
+        
+        // 如果任务日期不匹配选择的日期，跳过
+        if (taskDateStr !== overviewSelectedDate) return;
+      }
+      
+      const quadrant = task.quadrant || 1;
+      
+      if (quadrantMap.has(quadrant)) {
+        quadrantMap.set(quadrant, quadrantMap.get(quadrant) + 1);
+      } else {
+        quadrantMap.set(quadrant, 1);
+      }
+    });
+    
+    const stats = Array.from(quadrantMap.entries()).map(([quadrant, count]) => ({
+      quadrant: parseInt(quadrant),
+      name: QUADRANT_NAMES[quadrant] || `象限${quadrant}`,
+      count: count,
+      color: QUADRANT_COLORS[quadrant] || COLORS[quadrant - 1],
+    }));
+    
+    const total = stats.reduce((sum, item) => sum + item.count, 0);
+    
+    return stats.map(item => ({
+      ...item,
+      percentage: total > 0 ? ((item.count / total) * 100).toFixed(1) : 0,
+    })).sort((a, b) => a.quadrant - b.quadrant);
+  }, [tasks, activeTab, overviewSelectedDate]);
+
+  // 按分类统计已完成任务（概述标签页）
+  const completedTasksByCategory = useMemo(() => {
+    const categoryMap = new Map();
+    
+    tasks.forEach(task => {
+      // 只统计已完成的任务
+      if (task.status !== 'DONE') return;
+      
+      // 如果选择了日期，只统计该日期的任务
+      if (activeTab === 'overview' && overviewSelectedDate) {
+        // 检查任务的日期（优先使用plannedStartTime，如果没有则使用createdAt）
+        let taskDateStr = null;
+        if (task.plannedStartTime) {
+          const taskDate = parseLocalDateTime(task.plannedStartTime);
+          if (taskDate) {
+            const year = taskDate.getFullYear();
+            const month = String(taskDate.getMonth() + 1).padStart(2, '0');
+            const day = String(taskDate.getDate()).padStart(2, '0');
+            taskDateStr = `${year}-${month}-${day}`;
+          }
+        } else if (task.createdAt) {
+          const taskDate = parseLocalDateTime(task.createdAt);
+          if (taskDate) {
+            const year = taskDate.getFullYear();
+            const month = String(taskDate.getMonth() + 1).padStart(2, '0');
+            const day = String(taskDate.getDate()).padStart(2, '0');
+            taskDateStr = `${year}-${month}-${day}`;
+          }
+        }
+        
+        // 如果任务日期不匹配选择的日期，跳过
+        if (taskDateStr !== overviewSelectedDate) return;
+      }
+      
+      const categoryName = (task.type && task.type.name) ? task.type.name : '无分类';
+      
+      if (categoryMap.has(categoryName)) {
+        categoryMap.set(categoryName, categoryMap.get(categoryName) + 1);
+      } else {
+        categoryMap.set(categoryName, 1);
+      }
+    });
+    
+    const stats = Array.from(categoryMap.entries()).map(([name, count]) => ({
+      name,
+      count,
+    }));
+    
+    return stats.sort((a, b) => b.count - a.count);
+  }, [tasks, activeTab, overviewSelectedDate]);
+
+  // 专注统计（专注标签页）
+  const focusStats = useMemo(() => {
+    // 计算总专注时长和次数
+    let totalFocusMinutes = 0;
+    let focusCount = 0;
+    
+    journalEntries.forEach(entry => {
+      if (entry.totalFocusMinutes && entry.totalFocusMinutes > 0) {
+        totalFocusMinutes += entry.totalFocusMinutes;
+        focusCount++;
+      }
+    });
+    
+    // 按活动类型统计专注时长（如果有activity字段）
+    const activityMap = new Map();
+    journalEntries.forEach(entry => {
+      if (entry.totalFocusMinutes && entry.totalFocusMinutes > 0 && entry.activity) {
+        const activity = entry.activity;
+        if (activityMap.has(activity)) {
+          activityMap.set(activity, activityMap.get(activity) + entry.totalFocusMinutes);
+        } else {
+          activityMap.set(activity, entry.totalFocusMinutes);
+        }
+      }
+    });
+    
+    const activityStats = Array.from(activityMap.entries()).map(([name, minutes]) => ({
+      name,
+      minutes: Math.round(minutes),
+      hours: (minutes / 60).toFixed(1),
+    }));
+    
+    const totalActivityMinutes = activityStats.reduce((sum, item) => sum + item.minutes, 0);
+    
+    return {
+      totalFocusMinutes: Math.round(totalFocusMinutes),
+      focusCount,
+      activityStats: activityStats.map(item => ({
+        ...item,
+        percentage: totalActivityMinutes > 0 ? ((item.minutes / totalActivityMinutes) * 100).toFixed(1) : 0,
+      })).sort((a, b) => b.minutes - a.minutes),
+    };
+  }, [journalEntries]);
+
+  // 专注时段分布（按小时统计选择日期的数据）
+  const focusTimeDistribution = useMemo(() => {
+    const hourMap = new Map();
+    
+    // 只统计选择日期的数据
+    journalEntries.forEach(entry => {
+      if (entry.totalFocusMinutes && entry.totalFocusMinutes > 0) {
+        // 获取日记的日期
+        let entryDateStr;
+        if (entry.date) {
+          entryDateStr = entry.date; // 格式：YYYY-MM-DD
+        } else if (entry.createdAt) {
+          const date = new Date(entry.createdAt);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          entryDateStr = `${year}-${month}-${day}`;
+        }
+        
+        // 只统计选择日期的数据
+        if (entryDateStr === focusSelectedDate) {
+          // 从createdAt获取小时
+          if (entry.createdAt) {
+            const date = new Date(entry.createdAt);
+            const hour = date.getHours();
+            const minutes = entry.totalFocusMinutes || 0;
+            
+            if (hourMap.has(hour)) {
+              hourMap.set(hour, hourMap.get(hour) + minutes);
+            } else {
+              hourMap.set(hour, minutes);
+            }
+          }
+        }
+      }
+    });
+    
+    // 生成24小时的数据
+    const stats = [];
+    for (let i = 0; i < 24; i++) {
+      stats.push({
+        hour: i,
+        label: `${i}:00`,
+        minutes: Math.round(hourMap.get(i) || 0),
+      });
+    }
+    
+    return stats;
+  }, [journalEntries, focusSelectedDate]);
 
   // 饼状图点击事件
   const handlePieClick = (data) => {
@@ -429,35 +686,159 @@ function Analytics() {
 
   return (
     <div className="page-content analytics-container">
-      {/* 视图切换 */}
-      <div className="analytics-header">
-        <div className="view-toggle">
-          <button
-            className={`toggle-btn ${viewMode === 'daily' ? 'active' : ''}`}
-            onClick={() => setViewMode('daily')}
-          >
-            日报
-          </button>
-          <button
-            className={`toggle-btn ${viewMode === 'weekly' ? 'active' : ''}`}
-            onClick={() => setViewMode('weekly')}
-          >
-            周报
-          </button>
-        </div>
-        {viewMode === 'daily' && (
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="date-picker"
-          />
-        )}
+      {/* 标签页切换 */}
+      <div className="analytics-tabs">
+        <button
+          className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
+          onClick={() => setActiveTab('overview')}
+        >
+          概述
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'plan' ? 'active' : ''}`}
+          onClick={() => setActiveTab('plan')}
+        >
+          计划
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'focus' ? 'active' : ''}`}
+          onClick={() => setActiveTab('focus')}
+        >
+          专注
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'recurring' ? 'active' : ''}`}
+          onClick={() => setActiveTab('recurring')}
+        >
+          重复事件
+        </button>
       </div>
 
-      {viewMode === 'daily' ? (
-        /* 日报视图 */
-        <div className="daily-analytics">
+      {/* 视图切换（仅在计划标签页显示） */}
+      {activeTab === 'plan' && (
+        <div className="analytics-header">
+          <div className="view-toggle">
+            <button
+              className={`toggle-btn ${viewMode === 'daily' ? 'active' : ''}`}
+              onClick={() => setViewMode('daily')}
+            >
+              日报
+            </button>
+            <button
+              className={`toggle-btn ${viewMode === 'weekly' ? 'active' : ''}`}
+              onClick={() => setViewMode('weekly')}
+            >
+              周报
+            </button>
+          </div>
+          {viewMode === 'daily' && (
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="date-picker"
+            />
+          )}
+        </div>
+      )}
+
+      {/* 概述标签页 */}
+      {activeTab === 'overview' && (
+        <div className="overview-analytics">
+          {/* 日期选择器 */}
+          <div className="analytics-header">
+            <div className="date-selector-group">
+              <label htmlFor="overview-date-picker">选择日期：</label>
+              <input
+                id="overview-date-picker"
+                type="date"
+                value={overviewSelectedDate}
+                onChange={(e) => setOverviewSelectedDate(e.target.value)}
+                className="date-picker"
+              />
+            </div>
+          </div>
+
+          {/* 完成计划 - 按四象限饼图 */}
+          {completedTasksByQuadrant.length > 0 && (
+            <div className="chart-section">
+              <h3>完成计划</h3>
+              <div className="chart-summary">
+                <div className="summary-text">完成计划</div>
+                <div className="summary-count">
+                  {completedTasksByQuadrant.reduce((sum, item) => sum + item.count, 0)}条
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={400}>
+                <PieChart>
+                  <Pie
+                    data={completedTasksByQuadrant}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={120}
+                    paddingAngle={5}
+                    dataKey="count"
+                  >
+                    {completedTasksByQuadrant.map((entry, index) => (
+                      <Cell key={`quadrant-cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => `${value}条`}
+                    labelFormatter={(label) => label}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              {/* 只保留一组图例 */}
+              <div className="quadrant-legend">
+                {completedTasksByQuadrant.map((item) => (
+                  <div key={item.quadrant} className="legend-item">
+                    <span className="legend-dot" style={{ backgroundColor: item.color }}></span>
+                    <span>{item.name}: {item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 完成计划分类 - 横向柱状图 */}
+          {completedTasksByCategory.length > 0 && (
+            <div className="chart-section">
+              <h3>完成计划分类</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart 
+                  data={completedTasksByCategory}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="name" type="category" width={100} />
+                  <Tooltip formatter={(value) => `${value}条`} />
+                  <Bar dataKey="count" fill="#8884d8">
+                    {completedTasksByCategory.map((entry, index) => (
+                      <Cell key={`category-bar-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {completedTasksByQuadrant.length === 0 && completedTasksByCategory.length === 0 && (
+            <div className="empty-state">暂无已完成的任务数据</div>
+          )}
+        </div>
+      )}
+
+      {/* 计划标签页（原有内容） */}
+      {activeTab === 'plan' && (
+
+        <div className="plan-analytics">
+          {viewMode === 'daily' ? (
+            /* 日报视图 */
+            <div className="daily-analytics">
           {dailyCategoryStats.length > 0 ? (
             <>
               <div className="chart-section">
@@ -632,6 +1013,137 @@ function Analytics() {
               <div className="empty-state">本周暂无任务数据</div>
             )}
           </div>
+        </div>
+          )}
+        </div>
+      )}
+
+      {/* 专注标签页 */}
+      {activeTab === 'focus' && (
+        <div className="focus-analytics">
+          {/* 日期选择器 */}
+          <div className="analytics-header">
+            <div className="date-selector-group">
+              <label htmlFor="focus-date-picker">选择日期：</label>
+              <input
+                id="focus-date-picker"
+                type="date"
+                value={focusSelectedDate}
+                onChange={(e) => setFocusSelectedDate(e.target.value)}
+                className="date-picker"
+              />
+            </div>
+          </div>
+
+          {/* 专注摘要卡片 */}
+          <div className="focus-summary-card">
+            <div className="summary-item">
+              <div className="summary-label">专注时长</div>
+              <div className="summary-value">{formatDuration(focusStats.totalFocusMinutes)}</div>
+            </div>
+            <div className="summary-divider"></div>
+            <div className="summary-item">
+              <div className="summary-label">专注次数</div>
+              <div className="summary-value">{focusStats.focusCount}次</div>
+            </div>
+          </div>
+
+          {/* 专注时长分布 - 环形图 */}
+          {focusStats.activityStats.length > 0 && (
+            <div className="chart-section">
+              <h3>专注时长分布</h3>
+              <div className="chart-summary">
+                <div className="summary-text">总专注时长</div>
+                <div className="summary-count">{formatDuration(focusStats.totalFocusMinutes)}</div>
+              </div>
+              <ResponsiveContainer width="100%" height={400}>
+                <PieChart>
+                  <Pie
+                    data={focusStats.activityStats}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={120}
+                    paddingAngle={5}
+                    dataKey="minutes"
+                  >
+                    {focusStats.activityStats.map((entry, index) => (
+                      <Cell key={`activity-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => formatDuration(value)}
+                    labelFormatter={(label) => label}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+              
+              {/* 详细列表 */}
+              <div className="activity-detail-list">
+                {focusStats.activityStats.map((item, index) => (
+                  <div key={item.name} className="activity-item">
+                    <div className="activity-name">{item.name}</div>
+                    <div className="activity-progress">
+                      <div 
+                        className="activity-progress-bar"
+                        style={{
+                          width: `${item.percentage}%`,
+                          backgroundColor: COLORS[index % COLORS.length],
+                        }}
+                      />
+                    </div>
+                    <div className="activity-info">
+                      <span className="activity-duration">{formatDuration(item.minutes)}</span>
+                      <span className="activity-percentage">{item.percentage}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 专注时段分布（按小时显示选择日期的数据） */}
+          {focusTimeDistribution.some(item => item.minutes > 0) && (
+            <div className="chart-section">
+              <h3>专注时段分布（{focusSelectedDate}）</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={focusTimeDistribution}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="hour" 
+                    label={{ value: '小时', position: 'insideBottom', offset: -5 }}
+                  />
+                  <YAxis 
+                    label={{ value: '分钟', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip
+                    formatter={(value) => formatDuration(value)}
+                    labelFormatter={(label) => `${label}:00`}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="minutes" 
+                    stroke="#8884d8" 
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {focusStats.totalFocusMinutes === 0 && (
+            <div className="empty-state">暂无专注数据</div>
+          )}
+        </div>
+      )}
+
+      {/* 重复事件标签页 */}
+      {activeTab === 'recurring' && (
+        <div className="recurring-analytics">
+          <div className="empty-state">重复事件统计功能开发中...</div>
         </div>
       )}
 

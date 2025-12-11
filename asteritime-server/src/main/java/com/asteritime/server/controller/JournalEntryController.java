@@ -3,19 +3,22 @@ package com.asteritime.server.controller;
 import com.asteritime.common.model.JournalEntry;
 import com.asteritime.server.service.JournalEntryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Journal 相关接口
  *
  * 功能：
+ *   - 创建、查询、更新、删除日记条目
+ *   - 按日期查看日记（支持一天多个日记）
  *   - 获取当前用户的所有日志
- *   - APP 当天首次打开时，初始化 / 获取当天的 JournalEntry
  *   - 番茄钟倒计时结束后，累计当天的专注总时长
  */
 @RestController
@@ -24,6 +27,61 @@ public class JournalEntryController {
 
     @Autowired
     private JournalEntryService journalEntryService;
+
+    /**
+     * 创建新的日记条目
+     *
+     * 示例：
+     *   POST /api/journal-entries
+     *   Header: Authorization: Bearer <token>
+     *   Body: {
+     *     "date": "2025-12-09",
+     *     "title": "今天的心情",
+     *     "contentText": "今天过得很充实...",
+     *     "imageUrls": "[\"url1\", \"url2\"]",
+     *     "weather": "晴天",
+     *     "mood": "开心",
+     *     "activity": "工作",
+     *     "voiceNoteUrl": "https://..."
+     *   }
+     */
+    @PostMapping
+    public ResponseEntity<JournalEntry> createJournalEntry(HttpServletRequest request,
+                                                           @RequestBody JournalEntry journalEntry) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        JournalEntry created = journalEntryService.createJournalEntry(userId, journalEntry);
+        return ResponseEntity.ok(created);
+    }
+
+    /**
+     * 根据ID获取日记条目
+     *
+     * 示例：
+     *   GET /api/journal-entries/{id}
+     *   Header: Authorization: Bearer <token>
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<JournalEntry> getJournalEntryById(HttpServletRequest request,
+                                                             @PathVariable Long id) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        return journalEntryService.findById(id)
+                .map(entry -> {
+                    // 验证是否是自己的日记
+                    if (!entry.getUser().getId().equals(userId)) {
+                        return ResponseEntity.status(403).<JournalEntry>build();
+                    }
+                    return ResponseEntity.ok(entry);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 
     /**
      * 获取当前用户的所有日志（按日期倒序排列，最新的在前）
@@ -45,6 +103,127 @@ public class JournalEntryController {
 
         List<JournalEntry> entries = journalEntryService.findAllByUserId(userId);
         return ResponseEntity.ok(entries);
+    }
+
+    /**
+     * 按日期查询日记条目（返回该天的所有日记，按创建时间倒序）
+     *
+     * 示例：
+     *   GET /api/journal-entries/by-date?date=2025-12-09
+     *   Header: Authorization: Bearer <token>
+     *
+     * 返回：该天的所有日记列表，如果没有则返回空数组
+     */
+    @GetMapping("/by-date")
+    public ResponseEntity<List<JournalEntry>> getEntriesByDate(HttpServletRequest request,
+                                                               @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (date == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<JournalEntry> entries = journalEntryService.findByUserAndDate(userId, date);
+        return ResponseEntity.ok(entries);
+    }
+
+    /**
+     * 按日期范围查询日记条目
+     *
+     * 示例：
+     *   GET /api/journal-entries/by-date-range?startDate=2025-12-01&endDate=2025-12-31
+     *   Header: Authorization: Bearer <token>
+     */
+    @GetMapping("/by-date-range")
+    public ResponseEntity<List<JournalEntry>> getEntriesByDateRange(HttpServletRequest request,
+                                                                     @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                                                                     @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (startDate == null || endDate == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<JournalEntry> entries = journalEntryService.findByUserAndDateRange(userId, startDate, endDate);
+        return ResponseEntity.ok(entries);
+    }
+
+    /**
+     * 更新日记条目
+     *
+     * 示例：
+     *   PUT /api/journal-entries/{id}
+     *   Header: Authorization: Bearer <token>
+     *   Body: {
+     *     "title": "更新的标题",
+     *     "contentText": "更新的内容...",
+     *     ...
+     *   }
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<JournalEntry> updateJournalEntry(HttpServletRequest request,
+                                                            @PathVariable Long id,
+                                                            @RequestBody JournalEntry updatedEntry) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            System.out.println("更新日记请求 - userId: " + userId + ", entryId: " + id);
+            System.out.println("更新数据: " + updatedEntry);
+            
+            Optional<JournalEntry> result = journalEntryService.updateJournalEntry(userId, id, updatedEntry);
+            
+            if (result.isPresent()) {
+                System.out.println("更新成功: " + result.get());
+                return ResponseEntity.ok(result.get());
+            } else {
+                System.out.println("未找到日记条目: " + id);
+                return ResponseEntity.notFound().build();
+            }
+        } catch (IllegalArgumentException e) {
+            System.err.println("权限错误: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(403).build();
+        } catch (IllegalStateException e) {
+            System.err.println("状态错误: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        } catch (Exception e) {
+            // 记录异常日志，返回详细错误信息
+            System.err.println("更新日记失败: " + e.getMessage());
+            System.err.println("异常类型: " + e.getClass().getName());
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 删除日记条目
+     *
+     * 示例：
+     *   DELETE /api/journal-entries/{id}
+     *   Header: Authorization: Bearer <token>
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteJournalEntry(HttpServletRequest request,
+                                                   @PathVariable Long id) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            boolean deleted = journalEntryService.deleteJournalEntry(userId, id);
+            return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(403).build();
+        }
     }
 
     /**
@@ -84,7 +263,7 @@ public class JournalEntryController {
      */
     @GetMapping("/focus-time")
     public ResponseEntity<Integer> getFocusTime(HttpServletRequest request,
-                                                @RequestParam("date") LocalDate date) {
+                                                @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         Long userId = (Long) request.getAttribute("userId");
         if (userId == null) {
             return ResponseEntity.status(401).build();
@@ -98,7 +277,8 @@ public class JournalEntryController {
     }
 
     /**
-     * 查询某天的评价 / 总结。
+     * 查询某天的评价 / 总结（向后兼容接口）。
+     * 注意：现在一天可以有多个journal，此接口返回该天第一个创建的条目（如果有evaluation字段）
      *
      * 注意：userId 从 token 中自动获取
      *
@@ -106,12 +286,12 @@ public class JournalEntryController {
      *   GET /api/journal-entries/evaluation?date=2025-12-03
      *   Header: Authorization: Bearer <token>
      * 返回：
-     *   - 找到记录：返回完整的 JournalEntry（其中 evaluation 字段为该天的总结，可能为 null）
+     *   - 找到记录：返回第一个 JournalEntry（其中 evaluation 字段为该天的总结，可能为 null）
      *   - 未找到记录：返回 404
      */
     @GetMapping("/evaluation")
     public ResponseEntity<JournalEntry> getEvaluation(HttpServletRequest request,
-                                                      @RequestParam("date") LocalDate date) {
+                                                      @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         Long userId = (Long) request.getAttribute("userId");
         if (userId == null) {
             return ResponseEntity.status(401).build();
@@ -120,9 +300,18 @@ public class JournalEntryController {
             return ResponseEntity.badRequest().build();
         }
 
-        return journalEntryService.findByUserAndDate(userId, date)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        List<JournalEntry> entries = journalEntryService.findByUserAndDate(userId, date);
+        if (entries.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // 返回第一个有evaluation的条目，或第一个条目
+        JournalEntry entry = entries.stream()
+                .filter(e -> e.getEvaluation() != null && !e.getEvaluation().isEmpty())
+                .findFirst()
+                .orElse(entries.get(0));
+        
+        return ResponseEntity.ok(entry);
     }
 
     /**

@@ -5,6 +5,7 @@ import KanbanColumn from './KanbanColumn';
 import CreateTaskModal from './CreateTaskModal';
 import StatusChangeModal from './StatusChangeModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import { formatLocalDateTimeISO } from '../utils/dateUtils';
 import './Dashboard.css';
 
 function Dashboard() {
@@ -29,11 +30,11 @@ function Dashboard() {
 
     // 如果DOING状态的任务到了计划结束时间，自动变为已完成，并设置actualEndTime为plannedEndTime
     if (task.status === 'DOING' && endTime && now >= endTime) {
-      // 确保actualEndTime格式正确（ISO格式，去掉毫秒）
+      // 确保actualEndTime格式正确（使用本地时间，格式：YYYY-MM-DDTHH:mm:ss）
       const actualEndTime = task.plannedEndTime 
         ? (typeof task.plannedEndTime === 'string' 
             ? task.plannedEndTime.slice(0, 19) 
-            : new Date(task.plannedEndTime).toISOString().slice(0, 19))
+            : formatLocalDateTimeISO(new Date(task.plannedEndTime)))
         : null;
       
       return {
@@ -136,12 +137,12 @@ function Dashboard() {
     return () => clearInterval(interval);
   }, [checkAndUpdateTaskStatus]);
 
-  // 按象限分组任务（排除已完成、延期、已取消的任务）
+  // 按象限分组任务（显示所有任务，包括已完成的任务）
   const tasksByQuadrant = {
-    1: tasks.filter(task => task.quadrant === 1 && task.status !== 'DONE' && task.status !== 'DELAY' && task.status !== 'CANCEL'),
-    2: tasks.filter(task => task.quadrant === 2 && task.status !== 'DONE' && task.status !== 'DELAY' && task.status !== 'CANCEL'),
-    3: tasks.filter(task => task.quadrant === 3 && task.status !== 'DONE' && task.status !== 'DELAY' && task.status !== 'CANCEL'),
-    4: tasks.filter(task => task.quadrant === 4 && task.status !== 'DONE' && task.status !== 'DELAY' && task.status !== 'CANCEL'),
+    1: tasks.filter(task => task.quadrant === 1 && task.status !== 'DELAY' && task.status !== 'CANCEL'),
+    2: tasks.filter(task => task.quadrant === 2 && task.status !== 'DELAY' && task.status !== 'CANCEL'),
+    3: tasks.filter(task => task.quadrant === 3 && task.status !== 'DELAY' && task.status !== 'CANCEL'),
+    4: tasks.filter(task => task.quadrant === 4 && task.status !== 'DELAY' && task.status !== 'CANCEL'),
   };
 
   // 按状态分组任务（用于 Kanban）
@@ -180,24 +181,14 @@ function Dashboard() {
       };
 
       // 格式化本地时间为 YYYY-MM-DDTHH:mm:ss 格式（不带时区）
-      const formatLocalDateTime = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const seconds = String(date.getSeconds()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-      };
-
       // 如果手动将状态改为DOING，设置actualStartTime为当前本地时间
       if (newStatus === 'DOING' && task.status === 'TODO') {
-        updateData.actualStartTime = formatLocalDateTime(new Date());
+        updateData.actualStartTime = formatLocalDateTimeISO(new Date());
       }
 
       // 如果手动将状态改为DONE，设置actualEndTime为当前本地时间（前提是状态不是TODO）
       if (newStatus === 'DONE' && task.status !== 'DONE' && task.status !== 'TODO') {
-        updateData.actualEndTime = formatLocalDateTime(new Date());
+        updateData.actualEndTime = formatLocalDateTimeISO(new Date());
       }
 
       await updateTask(taskId, updateData);

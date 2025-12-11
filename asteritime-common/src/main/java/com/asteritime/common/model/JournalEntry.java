@@ -1,25 +1,24 @@
 package com.asteritime.common.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 每日专注总结条目
+ * 日记条目
  *
- * 用于记录：
- *   - 某一天的日期（年月日）
- *   - 当天专注总时长（分钟）
- *   - 用户对这一天的主观评价（可为空）
- *   - 归属用户（每个用户每天最多一条）
+ * 用于记录用户的日记内容，支持：
+ *   - 标题、文本内容
+ *   - 图片（多个）
+ *   - 天气、心情、活动分类
+ *   - 语音记录
+ *   - 日期（年月日）
+ *   - 每个用户每天可以有多个日记条目
  */
 @Entity
-@Table(
-        name = "journal_entries",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"user_id", "date"})
-        }
-)
+@Table(name = "journal_entries")
+@JsonIgnoreProperties({"user"}) // 避免序列化User对象，防止循环引用和敏感信息泄露
 public class JournalEntry {
     
     @Id
@@ -40,14 +39,56 @@ public class JournalEntry {
     private LocalDate date;
     
     /**
+     * 日记标题
+     */
+    @Column(length = 255)
+    private String title;
+    
+    /**
+     * 日记文本内容
+     */
+    @Column(columnDefinition = "TEXT")
+    private String contentText;
+    
+    /**
+     * 图片URL列表（JSON格式存储，例如：["url1", "url2"]）
+     */
+    @Column(columnDefinition = "TEXT")
+    private String imageUrls;
+    
+    /**
+     * 天气（例如：晴天、雨天、多云等）
+     */
+    @Column(length = 50)
+    private String weather;
+    
+    /**
+     * 心情（例如：开心、难过、平静等）
+     */
+    @Column(length = 50)
+    private String mood;
+    
+    /**
+     * 活动（例如：工作、学习、运动等）
+     */
+    @Column(length = 50)
+    private String activity;
+    
+    /**
+     * 语音记录URL
+     */
+    @Column(length = 500)
+    private String voiceNoteUrl;
+    
+    /**
      * 当天专注总时长（分钟）
-     * 默认值为 0
+     * 默认值为 0（保留用于统计）
      */
     @Column(nullable = false)
     private Integer totalFocusMinutes = 0;
     
     /**
-     * 对这一天的评价 / 总结（可为空）
+     * 对这一天的评价 / 总结（可为空，保留向后兼容）
      */
     @Column(columnDefinition = "TEXT")
     private String evaluation;
@@ -123,6 +164,62 @@ public class JournalEntry {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public String getTitle() {
+        return title;
+    }
+    
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    
+    public String getContentText() {
+        return contentText;
+    }
+    
+    public void setContentText(String contentText) {
+        this.contentText = contentText;
+    }
+    
+    public String getImageUrls() {
+        return imageUrls;
+    }
+    
+    public void setImageUrls(String imageUrls) {
+        this.imageUrls = imageUrls;
+    }
+    
+    public String getWeather() {
+        return weather;
+    }
+    
+    public void setWeather(String weather) {
+        this.weather = weather;
+    }
+    
+    public String getMood() {
+        return mood;
+    }
+    
+    public void setMood(String mood) {
+        this.mood = mood;
+    }
+    
+    public String getActivity() {
+        return activity;
+    }
+    
+    public void setActivity(String activity) {
+        this.activity = activity;
+    }
+    
+    public String getVoiceNoteUrl() {
+        return voiceNoteUrl;
+    }
+    
+    public void setVoiceNoteUrl(String voiceNoteUrl) {
+        this.voiceNoteUrl = voiceNoteUrl;
     }
 }
 
