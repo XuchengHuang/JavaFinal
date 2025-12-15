@@ -7,7 +7,6 @@ import Timeline from './components/Timeline';
 import Pomodoro from './components/Pomodoro';
 import Analytics from './components/Analytics';
 import Journal from './components/Journal';
-import Settings from './components/Settings';
 import PrivateRoute from './components/PrivateRoute';
 import { isAuthenticated } from './api/auth';
 import './App.css';
@@ -68,16 +67,6 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <Journal />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <Settings />
               </Layout>
             </PrivateRoute>
           }

@@ -15,17 +15,11 @@ function Sidebar() {
     { text: 'Pomodoro', path: '/pomodoro', action: 'POMODORO' },
     { text: 'Analytics', path: '/analytics', action: 'ANALYTICS' },
     { text: 'Journal', path: '/journal', action: 'JOURNAL' },
-    { text: 'Settings', path: '/settings', action: 'SETTINGS' },
   ];
 
   const handleNavigation = (item) => {
-    if (item.action === 'SETTINGS') {
-      console.log('Switch to: SETTINGS');
-      // TODO: 实现设置页面
-    } else {
-      // 使用 React Router 进行导航
-      navigate(item.path);
-    }
+    // 使用 React Router 进行导航
+    navigate(item.path);
   };
 
   return (

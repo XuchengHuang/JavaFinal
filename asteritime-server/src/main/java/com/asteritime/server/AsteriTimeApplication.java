@@ -4,10 +4,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.retry.annotation.EnableRetry;
 
 @SpringBootApplication
 @EntityScan(basePackages = "com.asteritime.common.model")
 @EnableJpaRepositories(basePackages = "com.asteritime.server.repository")
+@EnableRetry  // 启用Spring Retry支持，用于乐观锁重试机制
 public class AsteriTimeApplication {
     
     /**

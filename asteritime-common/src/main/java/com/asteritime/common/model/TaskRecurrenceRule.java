@@ -49,6 +49,14 @@ public class TaskRecurrenceRule {
     @Column(name = "frequency_expression", nullable = false)
     private String frequencyExpression;
 
+    /**
+     * 乐观锁版本号（用于并发控制）
+     * 每次更新时自动递增，防止并发更新冲突
+     */
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -105,6 +113,14 @@ public class TaskRecurrenceRule {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public Long getVersion() {
+        return version;
+    }
+    
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }
 

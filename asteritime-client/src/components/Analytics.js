@@ -34,6 +34,7 @@ function Analytics() {
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'plan', 'focus', 'recurring'
   
   const [selectedDate, setSelectedDate] = useState(getTodayLocalDateString());
+  const [weeklySelectedDate, setWeeklySelectedDate] = useState(getTodayLocalDateString()); // 周报选择的任意一天，自动定位到所在周
   const [focusSelectedDate, setFocusSelectedDate] = useState(getTodayLocalDateString()); // 专注标签页的日期选择
   const [overviewSelectedDate, setOverviewSelectedDate] = useState(getTodayLocalDateString()); // 概述标签页的日期选择
   const [viewMode, setViewMode] = useState('daily'); // 'daily' or 'weekly'
@@ -109,10 +110,11 @@ function Analytics() {
               endTime: formatLocalDateTime(end),
             };
           } else {
-            const today = new Date();
-            const day = today.getDay();
-            const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-            const monday = new Date(today.setDate(diff));
+            // 根据选择的日期确定所在周（周一到周日）
+            const baseDate = new Date(weeklySelectedDate);
+            const day = baseDate.getDay();
+            const diff = baseDate.getDate() - day + (day === 0 ? -6 : 1);
+            const monday = new Date(baseDate.setDate(diff));
             monday.setHours(0, 0, 0, 0);
             const sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6);
@@ -142,11 +144,11 @@ function Analytics() {
           const entries = await getJournalEntriesByDate(selectedDate);
           setJournalEntries(entries || []);
         } else if (activeTab !== 'focus' && viewMode === 'weekly') {
-          // 周报：计算开始和结束日期
-          const today = new Date();
-          const day = today.getDay();
-          const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-          const monday = new Date(today.setDate(diff));
+          // 周报：根据选择日期所在周计算开始和结束日期
+          const baseDate = new Date(weeklySelectedDate);
+          const day = baseDate.getDay();
+          const diff = baseDate.getDate() - day + (day === 0 ? -6 : 1);
+          const monday = new Date(baseDate.setDate(diff));
           monday.setHours(0, 0, 0, 0);
           const sunday = new Date(monday);
           sunday.setDate(monday.getDate() + 6);
@@ -165,7 +167,7 @@ function Analytics() {
     };
 
     loadData();
-  }, [activeTab, viewMode, selectedDate, focusSelectedDate, overviewSelectedDate]);
+  }, [activeTab, viewMode, selectedDate, weeklySelectedDate, focusSelectedDate, overviewSelectedDate]);
 
   // 解析时间字符串为本地时间
   const parseLocalDateTime = (dateString) => {
@@ -406,6 +408,7 @@ function Analytics() {
     const stats = Array.from(categoryMap.values()).map(item => ({
       ...item,
       totalDuration: Math.round(item.totalDuration),
+      duration: Math.round(item.totalDuration), // 兼容详情弹窗的字段名
       hours: (item.totalDuration / 60).toFixed(1),
     }));
 
@@ -706,12 +709,6 @@ function Analytics() {
         >
           专注
         </button>
-        <button
-          className={`tab-btn ${activeTab === 'recurring' ? 'active' : ''}`}
-          onClick={() => setActiveTab('recurring')}
-        >
-          重复事件
-        </button>
       </div>
 
       {/* 视图切换（仅在计划标签页显示） */}
@@ -738,6 +735,18 @@ function Analytics() {
               onChange={(e) => setSelectedDate(e.target.value)}
               className="date-picker"
             />
+          )}
+          {viewMode === 'weekly' && (
+            <div className="date-selector-group">
+              <label htmlFor="weekly-date-picker">选择周：</label>
+              <input
+                id="weekly-date-picker"
+                type="date"
+                value={weeklySelectedDate}
+                onChange={(e) => setWeeklySelectedDate(e.target.value)}
+                className="date-picker"
+              />
+            </div>
           )}
         </div>
       )}
@@ -1137,13 +1146,6 @@ function Analytics() {
           {focusStats.totalFocusMinutes === 0 && (
             <div className="empty-state">暂无专注数据</div>
           )}
-        </div>
-      )}
-
-      {/* 重复事件标签页 */}
-      {activeTab === 'recurring' && (
-        <div className="recurring-analytics">
-          <div className="empty-state">重复事件统计功能开发中...</div>
         </div>
       )}
 

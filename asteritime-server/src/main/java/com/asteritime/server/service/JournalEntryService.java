@@ -4,7 +4,11 @@ import com.asteritime.common.model.JournalEntry;
 import com.asteritime.common.model.User;
 import com.asteritime.server.repository.JournalEntryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -12,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
+@Transactional(isolation = Isolation.READ_COMMITTED)
 public class JournalEntryService {
 
     @Autowired
@@ -69,7 +73,11 @@ public class JournalEntryService {
 
     /**
      * 更新日记条目（只能更新自己的日记）
+     * 使用乐观锁防止并发更新冲突
+     * 
+     * @throws OptimisticLockingFailureException 如果发生并发更新冲突
      */
+    @Retryable(value = {OptimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
     public Optional<JournalEntry> updateJournalEntry(Long userId, Long entryId, JournalEntry updatedEntry) {
         try {
             // 使用带User的查询，避免懒加载异常
@@ -134,10 +142,20 @@ public class JournalEntryService {
                 entry.setTotalFocusMinutes(updatedEntry.getTotalFocusMinutes());
             }
             
+            // 如果前端提供了version，使用前端提供的version（用于乐观锁检查）
+            if (updatedEntry.getVersion() != null) {
+                entry.setVersion(updatedEntry.getVersion());
+            }
+            
             System.out.println("准备保存日记条目: " + entry.getId());
-            JournalEntry saved = journalEntryRepository.save(entry);
-            System.out.println("保存成功: " + saved.getId());
-            return Optional.of(saved);
+            try {
+                JournalEntry saved = journalEntryRepository.save(entry);
+                System.out.println("保存成功: " + saved.getId());
+                return Optional.of(saved);
+            } catch (OptimisticLockingFailureException e) {
+                // 捕获乐观锁异常，重新抛出以便Controller层处理
+                throw new OptimisticLockingFailureException("日记已被其他操作修改，请刷新后重试", e);
+            }
             
         } catch (IllegalArgumentException | IllegalStateException e) {
             // 重新抛出业务异常
@@ -199,7 +217,9 @@ public class JournalEntryService {
      * 为指定用户在某一天累加专注时间（分钟）。
      * 注意：只累加到已存在的日记条目上，如果该天没有日记条目，则不创建新条目
      * 这样可以避免因为使用番茄钟而自动创建空的日记条目
+     * 使用乐观锁防止并发更新冲突
      */
+    @Retryable(value = {OptimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
     public JournalEntry addFocusMinutes(Long userId, LocalDate date, int focusMinutes) {
         List<JournalEntry> entries = journalEntryRepository.findByUser_IdAndDateOrderByCreatedAtDesc(userId, date);
 
@@ -226,7 +246,12 @@ public class JournalEntryService {
             entry = entries.get(entries.size() - 1);
             int current = Optional.ofNullable(entry.getTotalFocusMinutes()).orElse(0);
             entry.setTotalFocusMinutes(current + focusMinutes);
-            return journalEntryRepository.save(entry);
+            try {
+                return journalEntryRepository.save(entry);
+            } catch (OptimisticLockingFailureException e) {
+                // 如果发生并发冲突，重试（由@Retryable处理）
+                throw e;
+            }
         }
     }
 

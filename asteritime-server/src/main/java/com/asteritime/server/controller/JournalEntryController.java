@@ -4,6 +4,7 @@ import com.asteritime.common.model.JournalEntry;
 import com.asteritime.server.service.JournalEntryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -186,6 +187,12 @@ public class JournalEntryController {
                 System.out.println("未找到日记条目: " + id);
                 return ResponseEntity.notFound().build();
             }
+        } catch (org.springframework.dao.OptimisticLockingFailureException e) {
+            // 处理乐观锁冲突（并发更新冲突）
+            System.err.println("并发更新冲突: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .header("X-Error-Message", "日记已被其他操作修改，请刷新后重试")
+                    .build();
         } catch (IllegalArgumentException e) {
             System.err.println("权限错误: " + e.getMessage());
             e.printStackTrace();

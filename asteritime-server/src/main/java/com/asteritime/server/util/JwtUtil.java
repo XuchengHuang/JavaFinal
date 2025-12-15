@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -18,11 +19,13 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-    // JWT 密钥（实际生产环境应该从配置文件读取，且应该足够长和复杂）
-    private static final String SECRET_KEY = "AsteriTimeSecretKeyForJWTTokenGeneration2025ThisShouldBeLongEnough";
+    // JWT 密钥（从配置文件读取，生产环境必须通过环境变量设置）
+    @Value("${jwt.secret}")
+    private String secretKey;
     
-    // Token 过期时间：7天（单位：毫秒）
-    private static final long EXPIRATION_TIME = 7 * 24 * 60 * 60 * 1000L;
+    // Token 过期时间（从配置文件读取，默认7天）
+    @Value("${jwt.expiration:604800000}")
+    private long expirationTime;
 
     /**
      * 生成 JWT token
@@ -35,9 +38,9 @@ public class JwtUtil {
         claims.put("userId", userId);
 
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
+        Date expiryDate = new Date(now.getTime() + expirationTime);
 
-        SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+        SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes());
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -56,7 +59,7 @@ public class JwtUtil {
      */
     public Long getUserIdFromToken(String token) {
         try {
-            SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+            SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes());
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
@@ -85,7 +88,7 @@ public class JwtUtil {
      */
     public boolean validateToken(String token) {
         try {
-            SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+            SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes());
             Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()

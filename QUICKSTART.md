@@ -1,114 +1,111 @@
-# 快速启动指南
+# AsteriTime 快速开始指南
 
-## 一键启动（推荐）
+## 快速启动
 
-### macOS / Linux
+### 推荐方式：分别启动（便于调试）
+
+**首次使用：**
+```bash
+# 1. 配置环境（检查依赖、设置环境变量）
+./asteritime.sh setup
+```
+
+**日常开发（推荐）：**
+```bash
+# 终端1: 启动后端
+./asteritime.sh backend
+
+# 终端2: 启动前端
+./asteritime.sh frontend
+```
+
+这样可以在两个终端分别查看日志和调试。
+
+### 或者：一次性启动（后台运行）
 
 ```bash
-# 启动所有服务（后端 + 前端）
-./start.sh
+# 启动所有服务（后台运行）
+./asteritime.sh dev
 
-# 或指定启动模式
-./start.sh all      # 启动所有服务（默认）
-./start.sh server   # 只启动后端
-./start.sh client   # 只启动前端
-./start.sh stop     # 停止所有服务
+# 查看日志
+./asteritime.sh logs          # 后端日志
+./asteritime.sh logs frontend # 前端日志
 
-# 停止服务
-./stop.sh
+# 停止服务器
+./asteritime.sh stop
 ```
 
-### Windows
+## 数据库准备
 
-```cmd
-# 启动所有服务
-start.bat
-
-# 或指定启动模式
-start.bat all      # 启动所有服务（默认）
-start.bat server   # 只启动后端
-start.bat client   # 只启动前端
-start.bat stop     # 停止所有服务
-```
-
-## 手动启动
-
-### 1. 启动后端
+在启动应用前，确保 MySQL 数据库已创建：
 
 ```bash
-cd asteritime-server
-mvn spring-boot:run
+# 连接到 MySQL
+mysql -u root -p
+
+# 创建数据库
+CREATE DATABASE asteritime CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+exit
 ```
 
-后端将在 `http://localhost:8080/api` 启动
+应用启动后会自动创建表结构。
 
-### 2. 启动前端
+## 完整命令列表
 
-在新的终端窗口中：
+运行 `./asteritime.sh help` 查看所有可用命令。
 
-```bash
-cd asteritime-client
-mvn exec:java
-```
+## 环境配置
 
-## 前置要求
-
-1. **Java 11+**
+1. **复制环境变量模板**
    ```bash
-   java -version
+   cp .env.example .env
    ```
 
-2. **Maven 3.6+**
+2. **编辑 .env 文件**
    ```bash
-   mvn -version
+   # 设置数据库密码
+   DB_PASSWORD=your_password
+   
+   # 设置 JWT 密钥（生产环境必须）
+   JWT_SECRET=your_very_long_secret_key
    ```
 
-3. **MySQL 8.0+**
-   - 确保 MySQL 服务正在运行
-   - 默认配置：用户名 `root`，密码 `root`
-   - 数据库会自动创建（通过 Hibernate）
-
-## 首次运行
-
-首次运行时会自动：
-- 编译所有模块
-- 创建数据库表结构
-- 下载 Maven 依赖（可能需要几分钟）
+3. **运行配置检查**
+   ```bash
+   ./asteritime.sh setup
+   ```
 
 ## 常见问题
 
-### 1. 端口被占用
+### Java 版本问题
 
-如果 8080 端口被占用，修改 `asteritime-server/src/main/resources/application.yml`：
+如果提示找不到 Java 21：
 
-```yaml
-server:
-  port: 8081  # 改为其他端口
-```
-
-### 2. MySQL 连接失败
-
-检查 MySQL 是否运行：
+**macOS:**
 ```bash
-# macOS
-brew services list
-
-# Linux
-sudo systemctl status mysql
+brew install openjdk@21
 ```
 
-修改数据库配置：`asteritime-server/src/main/resources/application.yml`
-
-### 3. 编译错误
-
-清理并重新编译：
+**Linux:**
 ```bash
-mvn clean install
+sudo apt-get install openjdk-21-jdk
 ```
 
-## 查看日志
+### 数据库连接失败
 
-- 后端日志：`server.log`（使用脚本启动时）
-- 前端日志：`client.log`（使用脚本启动时）
-- 控制台输出：直接运行 Maven 命令时在终端显示
+1. 确保 MySQL 已启动
+2. 检查 `.env` 文件中的 `DB_PASSWORD` 是否正确
+3. 如果使用 Docker，数据库会自动启动
 
+### 端口被占用
+
+如果 8080 端口被占用，可以：
+1. 停止占用端口的进程
+2. 或修改 `application.yml` 中的端口配置
+
+## 更多文档
+
+- [环境变量配置](ENV_SETUP.md)
+- [GCP 部署指南](docs/GCP_DEPLOYMENT.md)
+- [API 文档](API_DOCUMENTATION.md)
+- [架构文档](docs/ARCHITECTURE.md)

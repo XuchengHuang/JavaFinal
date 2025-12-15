@@ -5,7 +5,11 @@ import com.asteritime.common.model.TaskStatus;
 import com.asteritime.common.model.User;
 import com.asteritime.server.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -13,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
+@Transactional(isolation = Isolation.READ_COMMITTED)
 public class TaskService {
 
     @Autowired
@@ -117,12 +121,15 @@ public class TaskService {
 
     /**
      * 更新任务（智能合并更新，保留已有字段，根据状态变更自动设置时间）
+     * 使用乐观锁防止并发更新冲突
      * 
      * @param id 任务ID
      * @param userId 用户ID（用于验证权限）
      * @param updatedTask 包含更新字段的任务对象（可能只包含部分字段）
      * @return 更新后的任务
+     * @throws OptimisticLockingFailureException 如果发生并发更新冲突
      */
+    @Retryable(value = {OptimisticLockingFailureException.class}, maxAttempts = 3, backoff = @Backoff(delay = 100))
     public Task updateTask(Long id, Long userId, Task updatedTask) {
         // 获取现有任务
         Optional<Task> existingTaskOpt = taskRepository.findByIdAndUser_Id(id, userId);
@@ -243,7 +250,16 @@ public class TaskService {
             throw new RuntimeException("任务标题不能为空");
         }
         
-        return taskRepository.save(existingTask);
+        try {
+            // 如果前端提供了version，使用前端提供的version（用于乐观锁检查）
+            if (updatedTask.getVersion() != null) {
+                existingTask.setVersion(updatedTask.getVersion());
+            }
+            return taskRepository.save(existingTask);
+        } catch (OptimisticLockingFailureException e) {
+            // 捕获乐观锁异常，重新抛出以便Controller层处理
+            throw new OptimisticLockingFailureException("任务已被其他操作修改，请刷新后重试", e);
+        }
     }
 
     /**

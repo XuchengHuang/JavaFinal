@@ -47,4 +47,12 @@ client.pid
 *.war
 *.ear
 
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.env
+# 但允许提交示例文件
+!.env.example
+
 

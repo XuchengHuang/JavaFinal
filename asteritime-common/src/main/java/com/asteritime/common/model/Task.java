@@ -76,6 +76,14 @@ public class Task {
      */
     private LocalDateTime actualEndTime;
     
+    /**
+     * 乐观锁版本号（用于并发控制）
+     * 每次更新时自动递增，防止并发更新冲突
+     */
+    @Version
+    @Column(nullable = false)
+    private Long version;
+    
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
@@ -210,6 +218,14 @@ public class Task {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public Long getVersion() {
+        return version;
+    }
+    
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }
 

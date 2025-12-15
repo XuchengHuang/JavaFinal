@@ -6,6 +6,7 @@ import com.asteritime.common.model.User;
 import com.asteritime.server.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -212,6 +213,11 @@ public class TaskController {
             // 使用智能更新方法，保留已有字段并根据状态变更自动设置时间
             Task updated = taskService.updateTask(id, userId, task);
             return ResponseEntity.ok(updated);
+        } catch (OptimisticLockingFailureException e) {
+            // 处理乐观锁冲突（并发更新冲突）
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .header("X-Error-Message", "任务已被其他操作修改，请刷新后重试")
+                    .build();
         } catch (DataIntegrityViolationException e) {
             // 处理数据库约束违反错误（如必填字段为空）
             return ResponseEntity.badRequest().body(null);
