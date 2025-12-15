@@ -1,22 +1,22 @@
--- 测试数据SQL插入语句
--- 用于测试概述标签页的功能
--- 总共21条已完成任务，符合图片中的统计
+-- Test data SQL insert statements
+-- Used for testing overview tab functionality
+-- Total 21 completed tasks, matching the statistics in the image
 
--- 注意：请先确认你的用户ID和分类ID，根据实际情况调整
--- 用户ID: 1 (Yuwan421)
--- 分类ID: 1(运动), 2(学习), 3(日常), 4(娱乐)
+-- Note: Please confirm your user ID and category ID, adjust according to actual situation
+-- User ID: 1 (Yuwan421)
+-- Category ID: 1(Sports), 2(Study), 3(Daily), 4(Entertainment)
 
--- 插入已完成的任务数据（用于测试概述页面的四象限统计和分类统计）
--- 四象限分布：重要且紧急(4条), 紧急不重要(5条), 不重要不紧急(3条), 重要不紧急(9条)
+-- Insert completed task data (for testing quadrant statistics and category statistics on overview page)
+-- Quadrant distribution: Urgent & Important(4), Urgent & Not Important(5), Not Urgent & Not Important(3), Not Urgent & Important(9)
 
--- 重要且紧急的任务（象限1）- 4条
+-- Urgent & Important tasks (Quadrant 1) - 4 items
 INSERT INTO tasks (title, description, quadrant, category_id, status, user_id, created_at, updated_at) VALUES
 ('完成项目报告', '撰写并提交项目最终报告', 1, 2, 'DONE', 1, NOW(), NOW()),
 ('准备重要会议', '准备明天的客户会议材料', 1, 2, 'DONE', 1, NOW(), NOW()),
 ('修复紧急bug', '修复生产环境的严重bug', 1, NULL, 'DONE', 1, NOW(), NOW()),
 ('提交作业', '完成并提交本周作业', 1, NULL, 'DONE', 1, NOW(), NOW());
 
--- 重要不紧急的任务（象限2）- 9条
+-- Not Urgent & Important tasks (Quadrant 2) - 9 items
 INSERT INTO tasks (title, description, quadrant, category_id, status, user_id, created_at, updated_at) VALUES
 ('学习新技术', '学习React Hooks高级用法', 2, 2, 'DONE', 1, NOW(), NOW()),
 ('制定学习计划', '制定下个月的学习计划', 2, 2, 'DONE', 1, NOW(), NOW()),
@@ -28,7 +28,7 @@ INSERT INTO tasks (title, description, quadrant, category_id, status, user_id, c
 ('完成数学作业', '完成数学作业', 2, NULL, 'DONE', 1, NOW(), NOW()),
 ('完成英语作业', '完成英语作业', 2, NULL, 'DONE', 1, NOW(), NOW());
 
--- 紧急不重要的任务（象限3）- 5条
+-- Urgent & Not Important tasks (Quadrant 3) - 5 items
 INSERT INTO tasks (title, description, quadrant, category_id, status, user_id, created_at, updated_at) VALUES
 ('回复邮件', '回复一些不重要的邮件', 3, 3, 'DONE', 1, NOW(), NOW()),
 ('接电话', '接听朋友的电话', 3, 3, 'DONE', 1, NOW(), NOW()),
@@ -36,16 +36,16 @@ INSERT INTO tasks (title, description, quadrant, category_id, status, user_id, c
 ('购买日用品', '去超市购买日用品', 3, 3, 'DONE', 1, NOW(), NOW()),
 ('处理工作邮件', '处理工作邮件', 3, NULL, 'DONE', 1, NOW(), NOW());
 
--- 不重要不紧急的任务（象限4）- 3条
+-- Not Urgent & Not Important tasks (Quadrant 4) - 3 items
 INSERT INTO tasks (title, description, quadrant, category_id, status, user_id, created_at, updated_at) VALUES
 ('看视频', '看一些娱乐视频', 4, 4, 'DONE', 1, NOW(), NOW()),
 ('玩游戏', '玩一会儿游戏放松', 4, 4, 'DONE', 1, NOW(), NOW()),
 ('休息', '休息一下', 4, NULL, 'DONE', 1, NOW(), NOW());
 
--- 分类统计分布（用于测试分类统计）：
--- 无分类: 6条 (已包含在上面)
--- 学习(2): 5条 (已包含在上面)
--- 日常(3): 4条 (已包含在上面)
--- 娱乐(4): 2条 (已包含在上面)
--- 运动(1): 1条 (已包含在上面)
--- 其他: 3条 (已包含在上面)
+-- Category statistics distribution (for testing category statistics):
+-- No category: 6 items (included above)
+-- Study(2): 5 items (included above)
+-- Daily(3): 4 items (included above)
+-- Entertainment(4): 2 items (included above)
+-- Sports(1): 1 item (included above)
+-- Others: 3 items (included above)

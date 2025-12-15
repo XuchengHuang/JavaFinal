@@ -2,29 +2,29 @@ import React from 'react';
 import './TaskCard.css';
 
 /**
- * 任务卡片组件
- * @param {object} task - 任务对象
- * @param {function} onClick - 点击回调
+ * Task card component
+ * @param {object} task - Task object
+ * @param {function} onClick - Click callback
  */
 function TaskCard({ task, onClick }) {
   const getStatusColor = (status) => {
     const colors = {
-      'TODO': '#6c757d',      // 灰色 - 待办
-      'DOING': '#007bff',     // 蓝色 - 进行中
-      'DONE': '#28a745',      // 绿色 - 已完成
-      'DELAY': '#ffc107',     // 黄色 - 延期
-      'CANCEL': '#dc3545',    // 红色 - 已取消
+      'TODO': '#6c757d',      // Gray - To Do
+      'DOING': '#007bff',     // Blue - In Progress
+      'DONE': '#28a745',      // Green - Completed
+      'DELAY': '#ffc107',     // Yellow - Delayed
+      'CANCEL': '#dc3545',    // Red - Cancelled
     };
     return colors[status] || '#6c757d';
   };
 
   const getStatusText = (status) => {
     const texts = {
-      'TODO': '待办',
-      'DOING': '进行中',
-      'DONE': '已完成',
-      'DELAY': '延期',
-      'CANCEL': '已取消',
+      'TODO': 'To Do',
+      'DOING': 'In Progress',
+      'DONE': 'Completed',
+      'DELAY': 'Delayed',
+      'CANCEL': 'Cancelled',
     };
     return texts[status] || status;
   };
@@ -58,7 +58,7 @@ function TaskCard({ task, onClick }) {
       {task.plannedStartTime && (
         <div className="task-time">
           <small>
-            {new Date(task.plannedStartTime).toLocaleString('zh-CN', {
+            {new Date(task.plannedStartTime).toLocaleString('en-US', {
               month: 'short',
               day: 'numeric',
               hour: '2-digit',

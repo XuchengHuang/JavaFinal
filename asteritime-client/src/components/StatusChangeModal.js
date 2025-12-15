@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import './StatusChangeModal.css';
 
 /**
- * 状态切换模态框
- * @param {boolean} isOpen - 是否打开
- * @param {object} task - 当前任务
- * @param {function} onClose - 关闭回调
- * @param {function} onStatusChange - 状态改变回调
- * @param {function} onDelete - 删除回调
+ * Status change modal
+ * @param {boolean} isOpen - Whether to open
+ * @param {object} task - Current task
+ * @param {function} onClose - Close callback
+ * @param {function} onStatusChange - Status change callback
+ * @param {function} onDelete - Delete callback
  */
 function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) {
   const [selectedStatus, setSelectedStatus] = useState(task?.status || 'TODO');
@@ -15,21 +15,21 @@ function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) 
 
   if (!isOpen || !task) return null;
 
-  // 检查任务是否不可修改状态（已完成、延期、已取消）
+  // Check if task status is locked (completed, delayed, cancelled)
   const isStatusLocked = task.status === 'DONE' || task.status === 'DELAY' || task.status === 'CANCEL';
   
-  // 检查是否可以从当前状态直接变为DONE（TODO状态不能直接变为DONE）
+  // Check if can change directly to DONE (TODO status cannot change directly to DONE)
   const canChangeToDone = task.status !== 'TODO';
   
-  // 检查是否可以从当前状态变为TODO（DOING状态不能变为TODO）
+  // Check if can change to TODO (DOING status cannot change to TODO)
   const canChangeToTodo = task.status !== 'DOING';
 
   const statusOptions = [
-    { value: 'TODO', label: '待办', color: '#6c757d', disabled: !canChangeToTodo },
-    { value: 'DOING', label: '进行中', color: '#007bff' },
-    { value: 'DONE', label: '已完成', color: '#28a745', disabled: !canChangeToDone },
-    { value: 'DELAY', label: '延期', color: '#ffc107' },
-    { value: 'CANCEL', label: '已取消', color: '#dc3545' },
+    { value: 'TODO', label: 'To Do', color: '#6c757d', disabled: !canChangeToTodo },
+    { value: 'DOING', label: 'In Progress', color: '#007bff' },
+    { value: 'DONE', label: 'Completed', color: '#28a745', disabled: !canChangeToDone },
+    { value: 'DELAY', label: 'Delayed', color: '#ffc107' },
+    { value: 'CANCEL', label: 'Cancelled', color: '#dc3545' },
   ];
 
   const handleSubmit = async (e) => {
@@ -39,15 +39,15 @@ function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) 
       return;
     }
 
-    // 验证：TODO状态不能直接变为DONE
+    // Validation: TODO status cannot change directly to DONE
     if (task.status === 'TODO' && selectedStatus === 'DONE') {
-      alert('待办任务需要先变为"进行中"状态，才能标记为"已完成"');
+      alert('Task in TODO status must be changed to DOING status first before marking as DONE');
       return;
     }
 
-    // 验证：DOING状态不能变为TODO
+    // Validation: DOING status cannot change to TODO
     if (task.status === 'DOING' && selectedStatus === 'TODO') {
-      alert('进行中的任务不能改回"待办"状态');
+      alert('Task in DOING status cannot be changed back to TODO status');
       return;
     }
 
@@ -56,8 +56,8 @@ function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) 
       await onStatusChange(task.id, selectedStatus);
       onClose();
     } catch (error) {
-      console.error('更新状态失败:', error);
-      alert('更新状态失败，请稍后重试');
+      console.error('Failed to update status:', error);
+      alert('Failed to update status, please try again later');
     } finally {
       setLoading(false);
     }
@@ -67,13 +67,13 @@ function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) 
     <div className="status-modal-overlay" onClick={onClose}>
       <div className="status-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="status-modal-header">
-          <h3>更改任务状态</h3>
+          <h3>Change Task Status</h3>
           <div className="header-actions">
             {onDelete && (
               <button
                 className="delete-btn"
                 onClick={() => onDelete(task)}
-                title="删除任务"
+                title="Delete task"
                 disabled={loading}
               >
                 🗑️
@@ -86,18 +86,18 @@ function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) 
           <div className="task-info">
             <h4>{task.title}</h4>
             <p className="current-status">
-              当前状态: <span style={{ color: statusOptions.find(s => s.value === task.status)?.color }}>
+              Current Status: <span style={{ color: statusOptions.find(s => s.value === task.status)?.color }}>
                 {statusOptions.find(s => s.value === task.status)?.label}
               </span>
             </p>
           </div>
           {isStatusLocked ? (
             <div className="status-locked-message">
-              <p>该任务状态已锁定，无法修改。</p>
+              <p>This task status is locked and cannot be modified.</p>
               <p className="locked-reason">
-                {task.status === 'DONE' && '已完成的任务状态不可更改'}
-                {task.status === 'DELAY' && '延期的任务状态不可更改'}
-                {task.status === 'CANCEL' && '已取消的任务状态不可更改'}
+                {task.status === 'DONE' && 'Completed task status cannot be changed'}
+                {task.status === 'DELAY' && 'Delayed task status cannot be changed'}
+                {task.status === 'CANCEL' && 'Cancelled task status cannot be changed'}
               </p>
             </div>
           ) : (
@@ -112,7 +112,7 @@ function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) 
                   color: '#856404',
                   fontSize: '14px'
                 }}>
-                  <p style={{ margin: 0 }}>⚠️ 待办任务需要先变为"进行中"状态，才能标记为"已完成"</p>
+                  <p style={{ margin: 0 }}>⚠️ Task in TODO status must be changed to DOING status first before marking as DONE</p>
                 </div>
               )}
               {task.status === 'DOING' && (
@@ -125,7 +125,7 @@ function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) 
                   color: '#856404',
                   fontSize: '14px'
                 }}>
-                  <p style={{ margin: 0 }}>⚠️ 进行中的任务不能改回"待办"状态</p>
+                  <p style={{ margin: 0 }}>⚠️ Task in DOING status cannot be changed back to TODO status</p>
                 </div>
               )}
               <div className="status-options">
@@ -158,7 +158,7 @@ function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) 
                       </span>
                       {isDisabled && (
                         <span style={{ fontSize: '12px', color: '#999', marginLeft: '5px' }}>
-                          (不可用)
+                          (Unavailable)
                         </span>
                       )}
                     </label>
@@ -172,7 +172,7 @@ function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) 
                   className="btn-cancel"
                   disabled={loading}
                 >
-                  取消
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -180,7 +180,7 @@ function StatusChangeModal({ isOpen, task, onClose, onStatusChange, onDelete }) 
                   disabled={loading || selectedStatus === task.status || (task.status === 'TODO' && selectedStatus === 'DONE') || (task.status === 'DOING' && selectedStatus === 'TODO')}
                   style={{ backgroundColor: statusOptions.find(s => s.value === selectedStatus)?.color }}
                 >
-                  {loading ? '更新中...' : '确认'}
+                  {loading ? 'Updating...' : 'Confirm'}
                 </button>
               </div>
             </form>

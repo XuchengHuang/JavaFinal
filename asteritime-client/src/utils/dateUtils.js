@@ -1,12 +1,12 @@
 /**
- * 日期工具函数
- * 自动使用浏览器的本地时区
- * 无论用户在哪个时区（纽约、上海等），都会自动使用正确的本地时间
+ * Date utility functions
+ * Automatically use browser's local timezone
+ * Regardless of which timezone the user is in (New York, Shanghai, etc.), automatically use correct local time
  */
 
 /**
- * 获取当前日期的本地日期字符串（格式：YYYY-MM-DD）
- * 使用本地时区，而不是UTC
+ * Get local date string for current date (format: YYYY-MM-DD)
+ * Use local timezone, not UTC
  */
 export const getLocalDateString = (date = new Date()) => {
   const year = date.getFullYear();
@@ -16,9 +16,9 @@ export const getLocalDateString = (date = new Date()) => {
 };
 
 /**
- * 将日期字符串转换为本地日期对象
- * @param {string} dateString - 日期字符串，格式：YYYY-MM-DD
- * @returns {Date} 本地日期对象
+ * Convert date string to local date object
+ * @param {string} dateString - Date string, format: YYYY-MM-DD
+ * @returns {Date} Local date object
  */
 export const parseLocalDate = (dateString) => {
   if (!dateString) return new Date();
@@ -27,14 +27,14 @@ export const parseLocalDate = (dateString) => {
 };
 
 /**
- * 获取今天的本地日期字符串
+ * Get today's local date string
  */
 export const getTodayLocalDateString = () => {
   return getLocalDateString(new Date());
 };
 
 /**
- * 获取昨天的本地日期字符串
+ * Get yesterday's local date string
  */
 export const getYesterdayLocalDateString = () => {
   const yesterday = new Date();
@@ -43,7 +43,7 @@ export const getYesterdayLocalDateString = () => {
 };
 
 /**
- * 获取明天的本地日期字符串
+ * Get tomorrow's local date string
  */
 export const getTomorrowLocalDateString = () => {
   const tomorrow = new Date();
@@ -52,15 +52,15 @@ export const getTomorrowLocalDateString = () => {
 };
 
 /**
- * 比较两个日期字符串是否相同（使用本地时区）
+ * Compare if two date strings are the same (using local timezone)
  */
 export const isSameLocalDate = (dateString1, dateString2) => {
   return dateString1 === dateString2;
 };
 
 /**
- * 格式化日期显示（根据浏览器语言自动选择格式）
- * 自动使用浏览器的时区和语言设置
+ * Format date display (always use English format)
+ * Automatically use browser's timezone but always display in English
  */
 export const formatLocalDateDisplay = (dateString) => {
   const date = parseLocalDate(dateString);
@@ -68,18 +68,15 @@ export const formatLocalDateDisplay = (dateString) => {
   const yesterday = getYesterdayLocalDateString();
   const tomorrow = getTomorrowLocalDateString();
 
-  // 获取浏览器语言
-  const browserLang = navigator.language || navigator.userLanguage || 'en-US';
-  const isChinese = browserLang.startsWith('zh');
-
   if (dateString === today) {
-    return isChinese ? '今天' : 'Today';
+    return 'Today';
   } else if (dateString === yesterday) {
-    return isChinese ? '昨天' : 'Yesterday';
+    return 'Yesterday';
   } else if (dateString === tomorrow) {
-    return isChinese ? '明天' : 'Tomorrow';
+    return 'Tomorrow';
   } else {
-    return date.toLocaleDateString(browserLang, {
+    // Always use English locale to ensure English format
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -89,13 +86,13 @@ export const formatLocalDateDisplay = (dateString) => {
 };
 
 /**
- * 格式化日期时间为本地字符串（格式：YYYY-MM-DD HH:mm:ss）
- * 自动使用浏览器的时区
+ * Format date time as local string (format: YYYY-MM-DD HH:mm:ss)
+ * Automatically use browser's timezone
  */
 export const formatLocalDateTime = (date) => {
   if (!date) return '';
   const d = date instanceof Date ? date : new Date(date);
-  // 使用浏览器的本地时区
+  // Use browser's local timezone
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -106,13 +103,13 @@ export const formatLocalDateTime = (date) => {
 };
 
 /**
- * 格式化日期时间为ISO格式字符串（格式：YYYY-MM-DDTHH:mm:ss，不带时区）
- * 用于API请求，自动使用浏览器的时区
+ * Format date time as ISO format string (format: YYYY-MM-DDTHH:mm:ss, without timezone)
+ * For API requests, automatically use browser's timezone
  */
 export const formatLocalDateTimeISO = (date) => {
   if (!date) return '';
   const d = date instanceof Date ? date : new Date(date);
-  // 使用浏览器的本地时区
+  // Use browser's local timezone
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -123,21 +120,21 @@ export const formatLocalDateTimeISO = (date) => {
 };
 
 /**
- * 获取当前时区信息（用于调试）
+ * Get current timezone information (for debugging)
  */
 export const getCurrentTimezone = () => {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 };
 
 /**
- * 获取时区偏移量（小时）
+ * Get timezone offset (hours)
  */
 export const getTimezoneOffset = () => {
   return -new Date().getTimezoneOffset() / 60;
 };
 
 /**
- * 格式化时间为本地时间字符串（格式：HH:mm）
+ * Format time as local time string (format: HH:mm)
  */
 export const formatLocalTime = (date) => {
   if (!date) return '';

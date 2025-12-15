@@ -3,8 +3,8 @@ import { Navigate } from 'react-router-dom';
 import { isAuthenticated } from '../api/auth';
 
 /**
- * 私有路由组件
- * 如果用户未登录，重定向到登录页面
+ * Private route component
+ * If user is not logged in, redirect to login page
  */
 function PrivateRoute({ children }) {
   const authenticated = isAuthenticated();

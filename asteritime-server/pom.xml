@@ -50,7 +50,7 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
         
-        <!-- Spring Retry (用于乐观锁重试机制) -->
+        <!-- Spring Retry (for optimistic locking retry mechanism) -->
         <dependency>
             <groupId>org.springframework.retry</groupId>
             <artifactId>spring-retry</artifactId>

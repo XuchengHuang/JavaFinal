@@ -4,7 +4,7 @@
   min-height: 100%;
 }
 
-/* 标签页样式 */
+/* Tab styles */
 .analytics-tabs {
   display: flex;
   gap: 10px;
@@ -114,7 +114,7 @@
   font-weight: 500;
 }
 
-/* 日报样式 */
+/* Daily report styles */
 .daily-analytics {
   display: flex;
   flex-direction: column;
@@ -134,7 +134,7 @@
   font-size: 18px;
 }
 
-/* 周报样式 */
+/* Weekly report styles */
 .weekly-analytics {
   background: white;
   padding: 20px;
@@ -218,7 +218,7 @@
   font-size: 16px;
 }
 
-/* 类别详情弹窗 */
+/* Category detail modal */
 .category-detail-modal {
   position: fixed;
   top: 0;
@@ -332,7 +332,7 @@
   font-size: 14px;
 }
 
-/* 概述标签页样式 */
+/* Overview tab styles */
 .overview-analytics {
   display: flex;
   flex-direction: column;
@@ -379,7 +379,7 @@
   display: inline-block;
 }
 
-/* 专注标签页样式 */
+/* Focus tab styles */
 .focus-analytics {
   display: flex;
   flex-direction: column;
@@ -470,7 +470,7 @@
   color: #999;
 }
 
-/* 重复事件标签页样式 */
+/* Recurring events tab styles */
 .recurring-analytics {
   background: white;
   padding: 40px;
@@ -478,7 +478,7 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
   .analytics-header {
     flex-direction: column;

@@ -3,8 +3,8 @@ import { authenticatedFetch } from './auth';
 import { API_BASE_URL } from '../config/api';
 
 /**
- * 创建新的日记条目
- * @param {Object} journalData - 日记数据
+ * Create a new journal entry
+ * @param {Object} journalData - Journal data
  * @returns {Promise<JournalEntry>}
  */
 export const createJournalEntry = async (journalData) => {
@@ -18,45 +18,45 @@ export const createJournalEntry = async (journalData) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`创建日记失败: ${errorText}`);
+    throw new Error(`Failed to create journal: ${errorText}`);
   }
 
   return await response.json();
 };
 
 /**
- * 根据ID获取日记条目
- * @param {number} id - 日记ID
+ * Get journal entry by ID
+ * @param {number} id - Journal ID
  * @returns {Promise<JournalEntry>}
  */
 export const getJournalEntryById = async (id) => {
   const response = await authenticatedFetch(`${API_BASE_URL}/journal-entries/${id}`);
   if (!response.ok) {
-    throw new Error('获取日记失败');
+    throw new Error('Failed to get journal entry');
   }
   return await response.json();
 };
 
 /**
- * 获取当前用户的所有日记（按日期倒序）
+ * Get all journal entries for current user (ordered by date desc)
  * @returns {Promise<JournalEntry[]>}
  */
 export const getAllJournalEntries = async () => {
   const response = await authenticatedFetch(`${API_BASE_URL}/journal-entries`);
   if (!response.ok) {
-    let errorMessage = '获取日记列表失败';
+    let errorMessage = 'Failed to get journal list';
     try {
       const errorText = await response.text();
       if (errorText) {
         errorMessage += `: ${errorText}`;
       }
     } catch (e) {
-      // 忽略解析错误
+      // Ignore parse errors
     }
     if (response.status === 401) {
-      errorMessage = '未授权，请重新登录';
+      errorMessage = 'Unauthorized, please login again';
     } else if (response.status === 500) {
-      errorMessage = '服务器错误，请稍后重试';
+      errorMessage = 'Server error, please try again later';
     }
     throw new Error(errorMessage);
   }
@@ -64,8 +64,8 @@ export const getAllJournalEntries = async () => {
 };
 
 /**
- * 按日期获取日记条目（返回该天的所有日记）
- * @param {string} date - 日期字符串，格式：YYYY-MM-DD
+ * Get journal entries by date (returns all entries for that day)
+ * @param {string} date - Date string, format: YYYY-MM-DD
  * @returns {Promise<JournalEntry[]>}
  */
 export const getJournalEntriesByDate = async (date) => {
@@ -73,19 +73,19 @@ export const getJournalEntriesByDate = async (date) => {
     `${API_BASE_URL}/journal-entries/by-date?date=${date}`
   );
   if (!response.ok) {
-    let errorMessage = '获取日记失败';
+    let errorMessage = 'Failed to get journal entries';
     try {
       const errorText = await response.text();
       if (errorText) {
         errorMessage += `: ${errorText}`;
       }
     } catch (e) {
-      // 忽略解析错误
+      // Ignore parse errors
     }
     if (response.status === 401) {
-      errorMessage = '未授权，请重新登录';
+      errorMessage = 'Unauthorized, please login again';
     } else if (response.status === 500) {
-      errorMessage = '服务器错误，请稍后重试';
+      errorMessage = 'Server error, please try again later';
     }
     throw new Error(errorMessage);
   }
@@ -93,9 +93,9 @@ export const getJournalEntriesByDate = async (date) => {
 };
 
 /**
- * 按日期范围获取日记条目
- * @param {string} startDate - 开始日期，格式：YYYY-MM-DD
- * @param {string} endDate - 结束日期，格式：YYYY-MM-DD
+ * Get journal entries by date range
+ * @param {string} startDate - Start date, format: YYYY-MM-DD
+ * @param {string} endDate - End date, format: YYYY-MM-DD
  * @returns {Promise<JournalEntry[]>}
  */
 export const getJournalEntriesByDateRange = async (startDate, endDate) => {
@@ -103,15 +103,15 @@ export const getJournalEntriesByDateRange = async (startDate, endDate) => {
     `${API_BASE_URL}/journal-entries/by-date-range?startDate=${startDate}&endDate=${endDate}`
   );
   if (!response.ok) {
-    throw new Error('获取日记失败');
+    throw new Error('Failed to get journal entries');
   }
   return await response.json();
 };
 
 /**
- * 更新日记条目
- * @param {number} id - 日记ID
- * @param {Object} journalData - 更新的日记数据
+ * Update journal entry
+ * @param {number} id - Journal ID
+ * @param {Object} journalData - Updated journal data
  * @returns {Promise<JournalEntry>}
  */
 export const updateJournalEntry = async (id, journalData) => {
@@ -125,15 +125,15 @@ export const updateJournalEntry = async (id, journalData) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`更新日记失败: ${errorText}`);
+    throw new Error(`Failed to update journal: ${errorText}`);
   }
 
   return await response.json();
 };
 
 /**
- * 删除日记条目
- * @param {number} id - 日记ID
+ * Delete journal entry
+ * @param {number} id - Journal ID
  * @returns {Promise<void>}
  */
 export const deleteJournalEntry = async (id) => {
@@ -143,27 +143,25 @@ export const deleteJournalEntry = async (id) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`删除日记失败: ${errorText}`);
+    throw new Error(`Failed to delete journal: ${errorText}`);
   }
 };
 
-// ========== 以下方法保留用于向后兼容和统计功能 ==========
-
 /**
- * 获取或创建今天的 JournalEntry
+ * Get or create today's journal entry
  * @returns {Promise<JournalEntry>}
  */
 export const getOrCreateToday = async () => {
   const response = await authenticatedFetch(`${API_BASE_URL}/journal-entries/today`);
   if (!response.ok) {
-    throw new Error('获取今日记录失败');
+    throw new Error('Failed to get today\'s entry');
   }
   return await response.json();
 };
 
 /**
- * 获取某天的专注总时长（分钟）
- * @param {string} date - 日期字符串，格式：YYYY-MM-DD
+ * Get total focus minutes for a specific date
+ * @param {string} date - Date string, format: YYYY-MM-DD
  * @returns {Promise<number>}
  */
 export const getFocusTime = async (date) => {
@@ -171,15 +169,15 @@ export const getFocusTime = async (date) => {
     `${API_BASE_URL}/journal-entries/focus-time?date=${date}`
   );
   if (!response.ok) {
-    throw new Error('获取专注时间失败');
+    throw new Error('Failed to get focus time');
   }
   return await response.json();
 };
 
 /**
- * 累加专注时间
- * @param {string} date - 日期字符串，格式：YYYY-MM-DD
- * @param {number} focusMinutes - 专注分钟数
+ * Add focus minutes
+ * @param {string} date - Date string, format: YYYY-MM-DD
+ * @param {number} focusMinutes - Focus minutes
  * @returns {Promise<JournalEntry>}
  */
 export const addFocusMinutes = async (date, focusMinutes) => {
@@ -196,7 +194,7 @@ export const addFocusMinutes = async (date, focusMinutes) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`累加专注时间失败: ${errorText}`);
+    throw new Error(`Failed to add focus time: ${errorText}`);
   }
 
   return await response.json();

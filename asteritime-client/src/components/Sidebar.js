@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
 /**
- * 左侧导航栏
+ * Left sidebar navigation
  */
 function Sidebar() {
   const navigate = useNavigate();
@@ -18,7 +18,6 @@ function Sidebar() {
   ];
 
   const handleNavigation = (item) => {
-    // 使用 React Router 进行导航
     navigate(item.path);
   };
 

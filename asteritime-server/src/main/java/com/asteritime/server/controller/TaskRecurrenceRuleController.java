@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 任务重复规则相关接口
+ * Task recurrence rule REST API endpoints
  * 
- * 注意：所有接口都需要在 Header 中携带 token：Authorization: Bearer <token>
- * userId 会自动从 token 中提取，确保用户只能操作自己的重复规则
+ * Note: All endpoints require Authorization header: Bearer <token>
+ * userId is automatically extracted from token to ensure users can only operate their own recurrence rules
  */
 @RestController
 @RequestMapping("/task-recurrence-rules")
@@ -25,13 +25,12 @@ public class TaskRecurrenceRuleController {
     private TaskRecurrenceRuleService taskRecurrenceRuleService;
 
     /**
-     * 查询当前用户的所有重复规则
+     * Get all recurrence rules for current user
      * 
-     * URL:
-     *   GET /api/task-recurrence-rules
-     *   Header: Authorization: Bearer <token>
+     * URL: GET /api/task-recurrence-rules
+     * Header: Authorization: Bearer <token>
      * 
-     * 返回：当前用户的所有重复规则列表
+     * Returns: List of all recurrence rules for current user
      */
     @GetMapping
     public ResponseEntity<List<TaskRecurrenceRule>> getAllRules(HttpServletRequest request) {
@@ -43,13 +42,12 @@ public class TaskRecurrenceRuleController {
     }
 
     /**
-     * 根据 ID 查询重复规则（验证属于当前用户）
+     * Get recurrence rule by ID (validates ownership)
      * 
-     * URL:
-     *   GET /api/task-recurrence-rules/{id}
-     *   Header: Authorization: Bearer <token>
+     * URL: GET /api/task-recurrence-rules/{id}
+     * Header: Authorization: Bearer <token>
      * 
-     * 返回：指定 ID 的规则，如果不存在或不属于当前用户则返回 404
+     * Returns: Rule with specified ID, or 404 if not found or not owned by current user
      */
     @GetMapping("/{id}")
     public ResponseEntity<TaskRecurrenceRule> getRule(HttpServletRequest request, @PathVariable Long id) {
@@ -63,20 +61,17 @@ public class TaskRecurrenceRuleController {
     }
 
     /**
-     * 创建新重复规则（自动关联到当前用户）
+     * Create new recurrence rule (automatically associated with current user)
      * 
-     * URL:
-     *   POST /api/task-recurrence-rules
-     *   Header: Authorization: Bearer <token>
+     * URL: POST /api/task-recurrence-rules
+     * Header: Authorization: Bearer <token>
      * 
-     * 请求体示例：
+     * Request body example:
      *   {
      *     "frequencyExpression": "1/day"
      *   }
      * 
-     * 逻辑：
-     *   - 如果该用户下频率表达式已存在，返回 400
-     *   - 否则创建新规则并返回
+     * Returns 400 if frequency expression already exists for this user, otherwise creates and returns new rule
      */
     @PostMapping
     public ResponseEntity<TaskRecurrenceRule> createRule(HttpServletRequest request,
@@ -95,7 +90,6 @@ public class TaskRecurrenceRuleController {
                 requestBody.getFrequencyExpression().trim()
         );
         if (!created.isPresent()) {
-            // 表达式已存在
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
@@ -103,15 +97,13 @@ public class TaskRecurrenceRuleController {
     }
 
     /**
-     * 删除重复规则（只能删除自己的规则）
+     * Delete recurrence rule (only own rules)
      * 
-     * URL:
-     *   DELETE /api/task-recurrence-rules/{id}
-     *   Header: Authorization: Bearer <token>
+     * URL: DELETE /api/task-recurrence-rules/{id}
+     * Header: Authorization: Bearer <token>
      * 
-     * 逻辑：
-     *   - 如果规则不存在或不属于当前用户，返回 404
-     *   - 否则删除并返回 204
+     * Returns 404 if rule doesn't exist or doesn't belong to current user,
+     * otherwise deletes and returns 204
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRule(HttpServletRequest request, @PathVariable Long id) {
@@ -127,10 +119,8 @@ public class TaskRecurrenceRuleController {
         }
     }
 
-    // ====== DTO ======
-
     /**
-     * 用于接收创建重复规则的请求体
+     * Request body for creating recurrence rule
      */
     public static class CreateRuleRequest {
         private String frequencyExpression;

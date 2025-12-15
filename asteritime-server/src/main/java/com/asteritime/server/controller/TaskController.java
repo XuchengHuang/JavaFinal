@@ -16,16 +16,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 任务相关接口
+ * Task REST API endpoints
  * 
- * 功能：
- *   - 查询任务（所有任务 / 单个任务）
- *   - 创建任务
- *   - 更新任务
- *   - 删除任务
+ * Features:
+ *   - Query tasks (all tasks / single task)
+ *   - Create task
+ *   - Update task
+ *   - Delete task
  * 
- * 注意：所有接口都需要在 Header 中携带 token：Authorization: Bearer <token>
- * userId 会自动从 token 中提取，确保用户只能操作自己的任务
+ * Note: All endpoints require Authorization header: Bearer <token>
+ * userId is automatically extracted from token to ensure users can only operate their own tasks
  */
 @RestController
 @RequestMapping("/tasks")
@@ -35,32 +35,31 @@ public class TaskController {
     private TaskService taskService;
     
     /**
-     * 获取当前用户的任务（支持多种查询条件）
+     * Get tasks for current user (supports multiple query conditions)
      * 
-     * URL:
-     *   GET /api/tasks
-     *   Header: Authorization: Bearer <token>
+     * URL: GET /api/tasks
+     * Header: Authorization: Bearer <token>
      * 
-     * 查询参数（全部可选，可组合使用）：
-     *   - quadrant: 四象限（1-4）
-     *   - categoryId: 类别ID
-     *   - status: 状态（DELAY, TODO, DOING, DONE, CANCEL）
-     *   - startTime: 开始时间（ISO 8601 格式，如：2025-12-06T00:00:00）
-     *   - endTime: 结束时间（ISO 8601 格式，如：2025-12-06T23:59:59）
+     * Query parameters (all optional, can be combined):
+     *   - quadrant: Quadrant (1-4)
+     *   - categoryId: Category ID
+     *   - status: Status (DELAY, TODO, DOING, DONE, CANCEL)
+     *   - startTime: Start time (ISO 8601 format, e.g., 2025-12-06T00:00:00)
+     *   - endTime: End time (ISO 8601 format, e.g., 2025-12-06T23:59:59)
      * 
-     * 示例：
-     *   GET /api/tasks                                    -> 所有任务
-     *   GET /api/tasks?quadrant=1                        -> 第一象限的任务
-     *   GET /api/tasks?categoryId=2                      -> 类别ID为2的任务
-     *   GET /api/tasks?status=TODO                       -> 状态为TODO的任务
-     *   GET /api/tasks?quadrant=1&categoryId=2           -> 第一象限且类别为2的任务
-     *   GET /api/tasks?quadrant=1&status=DOING           -> 第一象限且状态为DOING的任务
-     *   GET /api/tasks?categoryId=2&status=TODO          -> 类别为2且状态为TODO的任务
-     *   GET /api/tasks?startTime=2025-12-06T00:00:00&endTime=2025-12-06T23:59:59  -> 某一天的任务
-     *   GET /api/tasks?status=TODO&startTime=...&endTime=...  -> 状态为TODO且某时间范围的任务
-     *   GET /api/tasks?quadrant=1&status=DOING&startTime=...&endTime=...  -> 第一象限+DOING状态+时间范围
+     * Examples:
+     *   GET /api/tasks                                    -> All tasks
+     *   GET /api/tasks?quadrant=1                        -> Quadrant 1 tasks
+     *   GET /api/tasks?categoryId=2                      -> Category ID 2 tasks
+     *   GET /api/tasks?status=TODO                       -> TODO status tasks
+     *   GET /api/tasks?quadrant=1&categoryId=2           -> Quadrant 1 and category 2 tasks
+     *   GET /api/tasks?quadrant=1&status=DOING           -> Quadrant 1 and DOING status tasks
+     *   GET /api/tasks?categoryId=2&status=TODO          -> Category 2 and TODO status tasks
+     *   GET /api/tasks?startTime=2025-12-06T00:00:00&endTime=2025-12-06T23:59:59  -> Tasks for a specific day
+     *   GET /api/tasks?status=TODO&startTime=...&endTime=...  -> TODO status tasks within time range
+     *   GET /api/tasks?quadrant=1&status=DOING&startTime=...&endTime=...  -> Quadrant 1 + DOING + time range
      * 
-     * 返回：符合条件的任务列表（按创建时间倒序）
+     * Returns: List of matching tasks (ordered by creation time desc)
      */
     @GetMapping
     public ResponseEntity<List<Task>> getTasks(
@@ -76,12 +75,10 @@ public class TaskController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
-        // 验证四象限范围
         if (quadrant != null && (quadrant < 1 || quadrant > 4)) {
             return ResponseEntity.badRequest().build();
         }
         
-        // 验证状态值
         if (status != null && !status.isEmpty()) {
             try {
                 TaskStatus.valueOf(status.toUpperCase());
@@ -90,7 +87,6 @@ public class TaskController {
             }
         }
         
-        // 解析时间参数
         LocalDateTime startDateTime = null;
         LocalDateTime endDateTime = null;
         try {
@@ -104,7 +100,6 @@ public class TaskController {
             return ResponseEntity.badRequest().build();
         }
         
-        // 如果只提供了开始时间或结束时间，返回错误
         if ((startDateTime != null && endDateTime == null) || 
             (startDateTime == null && endDateTime != null)) {
             return ResponseEntity.badRequest().build();
@@ -116,13 +111,12 @@ public class TaskController {
     }
     
     /**
-     * 获取当前用户的指定任务
+     * Get specific task for current user
      * 
-     * URL:
-     *   GET /api/tasks/{id}
-     *   Header: Authorization: Bearer <token>
+     * URL: GET /api/tasks/{id}
+     * Header: Authorization: Bearer <token>
      * 
-     * 返回：指定 ID 的任务，如果不存在或不属于当前用户则返回 404
+     * Returns: Task with specified ID, or 404 if not found or not owned by current user
      */
     @GetMapping("/{id}")
     public ResponseEntity<Task> getTask(HttpServletRequest request, @PathVariable Long id) {
@@ -136,16 +130,15 @@ public class TaskController {
     }
     
     /**
-     * 创建任务（自动关联到当前用户）
+     * Create task (automatically associated with current user)
      * 
-     * URL:
-     *   POST /api/tasks
-     *   Header: Authorization: Bearer <token>
+     * URL: POST /api/tasks
+     * Header: Authorization: Bearer <token>
      * 
-     * 请求体示例：
+     * Request body example:
      *   {
-     *     "title": "完成项目报告",
-     *     "description": "需要完成本周的项目总结报告",
+     *     "title": "Complete project report",
+     *     "description": "Need to complete this week's project summary report",
      *     "quadrant": 1,
      *     "type": { "id": 1 },
      *     "recurrenceRule": { "id": 1 },
@@ -154,11 +147,11 @@ public class TaskController {
      *     "plannedEndTime": "2025-12-06T17:00:00"
      *   }
      * 
-     * 注意：
-     *   - userId 会自动从 token 中获取，无需在请求体中传递
-     *   - type 和 recurrenceRule 只需要传递 id 即可（如果有关联）
+     * Note:
+     *   - userId is automatically extracted from token, no need to pass in request body
+     *   - type and recurrenceRule only need to pass id (if associated)
      * 
-     * 返回：创建成功的任务对象（201 Created）
+     * Returns: Created task object (201 Created)
      */
     @PostMapping
     public ResponseEntity<Task> createTask(HttpServletRequest request, @RequestBody Task task) {
@@ -167,7 +160,6 @@ public class TaskController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
-        // 确保任务关联到当前用户
         User user = new User();
         user.setId(userId);
         task.setUser(user);
@@ -177,28 +169,27 @@ public class TaskController {
     }
     
     /**
-     * 更新任务（只能更新自己的任务）
+     * Update task (only own tasks)
      * 
-     * URL:
-     *   PUT /api/tasks/{id}
-     *   Header: Authorization: Bearer <token>
+     * URL: PUT /api/tasks/{id}
+     * Header: Authorization: Bearer <token>
      * 
-     * 请求体示例：
+     * Request body example:
      *   {
-     *     "title": "完成项目报告（已修改）",
-     *     "description": "需要完成本周的项目总结报告，并添加图表",
+     *     "title": "Complete project report (modified)",
+     *     "description": "Need to complete this week's project summary report and add charts",
      *     "quadrant": 1,
      *     "status": "DOING",
      *     "plannedStartTime": "2025-12-06T09:00:00",
      *     "plannedEndTime": "2025-12-06T18:00:00"
      *   }
      * 
-     * 注意：
-     *   - 请求体中的 id 会被路径参数覆盖
-     *   - userId 会自动从 token 中获取，确保只能更新自己的任务
-     *   - 如果任务不存在或不属于当前用户，返回 404
+     * Note:
+     *   - id in request body will be overridden by path parameter
+     *   - userId is automatically extracted from token to ensure only own tasks can be updated
+     *   - Returns 404 if task doesn't exist or doesn't belong to current user
      * 
-     * 返回：更新后的任务对象
+     * Returns: Updated task object
      */
     @PutMapping("/{id}")
     public ResponseEntity<Task> updateTask(HttpServletRequest request, 
@@ -210,41 +201,33 @@ public class TaskController {
         }
         
         try {
-            // 使用智能更新方法，保留已有字段并根据状态变更自动设置时间
             Task updated = taskService.updateTask(id, userId, task);
             return ResponseEntity.ok(updated);
         } catch (OptimisticLockingFailureException e) {
-            // 处理乐观锁冲突（并发更新冲突）
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .header("X-Error-Message", "任务已被其他操作修改，请刷新后重试")
+                    .header("X-Error-Message", "Task has been modified by another operation, please refresh and retry")
                     .build();
         } catch (DataIntegrityViolationException e) {
-            // 处理数据库约束违反错误（如必填字段为空）
             return ResponseEntity.badRequest().body(null);
         } catch (RuntimeException e) {
-            // 检查是否是状态变更验证错误
-            if (e.getMessage() != null && (e.getMessage().contains("待办任务") || e.getMessage().contains("进行中的任务"))) {
+            if (e.getMessage() != null && (e.getMessage().contains("TODO task") || e.getMessage().contains("DOING task"))) {
                 return ResponseEntity.badRequest().body(null);
             }
-            // 检查是否是数据完整性错误（如必填字段为空）
-            if (e.getMessage() != null && e.getMessage().contains("不能为空")) {
+            if (e.getMessage() != null && e.getMessage().contains("cannot be null")) {
                 return ResponseEntity.badRequest().body(null);
             }
-            // 任务不存在或不属于当前用户
             return ResponseEntity.notFound().build();
         }
     }
     
     /**
-     * 删除任务（只能删除自己的任务）
+     * Delete task (only own tasks)
      * 
-     * URL:
-     *   DELETE /api/tasks/{id}
-     *   Header: Authorization: Bearer <token>
+     * URL: DELETE /api/tasks/{id}
+     * Header: Authorization: Bearer <token>
      * 
-     * 逻辑：
-     *   - 如果任务不存在或不属于当前用户，返回 404
-     *   - 否则删除并返回 204 No Content
+     * Returns 404 if task doesn't exist or doesn't belong to current user,
+     * otherwise deletes and returns 204 No Content
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(HttpServletRequest request, @PathVariable Long id) {

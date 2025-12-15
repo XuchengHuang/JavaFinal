@@ -18,28 +18,27 @@ public class TaskRecurrenceRuleService {
     private TaskRecurrenceRuleRepository taskRecurrenceRuleRepository;
 
     /**
-     * 查询指定用户的所有重复规则
+     * Find all recurrence rules for a specific user
      */
     public List<TaskRecurrenceRule> findAllByUserId(Long userId) {
         return taskRecurrenceRuleRepository.findByUser_Id(userId);
     }
 
     /**
-     * 根据 ID 查询重复规则（验证属于指定用户）
+     * Find recurrence rule by ID (validates ownership)
      */
     public Optional<TaskRecurrenceRule> findByIdAndUserId(Long id, Long userId) {
         return taskRecurrenceRuleRepository.findByIdAndUser_Id(id, userId);
     }
 
     /**
-     * 创建新重复规则
+     * Create new recurrence rule
      * 
-     * @param userId 用户ID
-     * @param frequencyExpression 频率表达式
-     * @return 创建成功的规则，如果表达式已存在则返回 Optional.empty()
+     * @param userId User ID
+     * @param frequencyExpression Frequency expression
+     * @return Created rule, or Optional.empty() if expression already exists
      */
     public Optional<TaskRecurrenceRule> create(Long userId, String frequencyExpression) {
-        // 检查该用户下表达式是否已存在
         if (taskRecurrenceRuleRepository.findByUser_IdAndFrequencyExpression(userId, frequencyExpression).isPresent()) {
             return Optional.empty();
         }
@@ -55,11 +54,11 @@ public class TaskRecurrenceRuleService {
     }
 
     /**
-     * 删除重复规则（验证属于指定用户）
+     * Delete recurrence rule (validates ownership)
      * 
-     * @param id 规则 ID
-     * @param userId 用户ID
-     * @return true 如果删除成功，false 如果规则不存在或不属于该用户
+     * @param id Rule ID
+     * @param userId User ID
+     * @return true if deletion successful, false if rule doesn't exist or doesn't belong to user
      */
     public boolean deleteByIdAndUserId(Long id, Long userId) {
         Optional<TaskRecurrenceRule> ruleOpt = taskRecurrenceRuleRepository.findByIdAndUser_Id(id, userId);

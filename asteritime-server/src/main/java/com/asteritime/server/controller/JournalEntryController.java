@@ -14,13 +14,13 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Journal 相关接口
- *
- * 功能：
- *   - 创建、查询、更新、删除日记条目
- *   - 按日期查看日记（支持一天多个日记）
- *   - 获取当前用户的所有日志
- *   - 番茄钟倒计时结束后，累计当天的专注总时长
+ * Journal entry REST API endpoints
+ * 
+ * Features:
+ *   - Create, query, update, delete journal entries
+ *   - View entries by date (supports multiple entries per day)
+ *   - Get all logs for current user
+ *   - Accumulate focus time after Pomodoro timer ends
  */
 @RestController
 @RequestMapping("/journal-entries")
@@ -30,19 +30,19 @@ public class JournalEntryController {
     private JournalEntryService journalEntryService;
 
     /**
-     * 创建新的日记条目
-     *
-     * 示例：
+     * Create a new journal entry
+     * 
+     * Example:
      *   POST /api/journal-entries
      *   Header: Authorization: Bearer <token>
      *   Body: {
      *     "date": "2025-12-09",
-     *     "title": "今天的心情",
-     *     "contentText": "今天过得很充实...",
+     *     "title": "Today's mood",
+     *     "contentText": "Had a fulfilling day...",
      *     "imageUrls": "[\"url1\", \"url2\"]",
-     *     "weather": "晴天",
-     *     "mood": "开心",
-     *     "activity": "工作",
+     *     "weather": "Sunny",
+     *     "mood": "Happy",
+     *     "activity": "Work",
      *     "voiceNoteUrl": "https://..."
      *   }
      */
@@ -59,9 +59,9 @@ public class JournalEntryController {
     }
 
     /**
-     * 根据ID获取日记条目
-     *
-     * 示例：
+     * Get journal entry by ID
+     * 
+     * Example:
      *   GET /api/journal-entries/{id}
      *   Header: Authorization: Bearer <token>
      */
@@ -75,7 +75,6 @@ public class JournalEntryController {
 
         return journalEntryService.findById(id)
                 .map(entry -> {
-                    // 验证是否是自己的日记
                     if (!entry.getUser().getId().equals(userId)) {
                         return ResponseEntity.status(403).<JournalEntry>build();
                     }
@@ -85,15 +84,13 @@ public class JournalEntryController {
     }
 
     /**
-     * 获取当前用户的所有日志（按日期倒序排列，最新的在前）
-     *
-     * 注意：userId 从 token 中自动获取，无需在请求参数中传递
-     *
-     * 示例：
+     * Get all journal entries for current user (ordered by date desc, newest first)
+     * 
+     * Note: userId is automatically extracted from token
+     * 
+     * Example:
      *   GET /api/journal-entries
      *   Header: Authorization: Bearer <token>
-     *
-     * 返回：当前用户的所有日志列表，按日期倒序排列
      */
     @GetMapping
     public ResponseEntity<List<JournalEntry>> getAllEntries(HttpServletRequest request) {
@@ -107,13 +104,11 @@ public class JournalEntryController {
     }
 
     /**
-     * 按日期查询日记条目（返回该天的所有日记，按创建时间倒序）
-     *
-     * 示例：
+     * Get journal entries by date (returns all entries for that day, ordered by creation time desc)
+     * 
+     * Example:
      *   GET /api/journal-entries/by-date?date=2025-12-09
      *   Header: Authorization: Bearer <token>
-     *
-     * 返回：该天的所有日记列表，如果没有则返回空数组
      */
     @GetMapping("/by-date")
     public ResponseEntity<List<JournalEntry>> getEntriesByDate(HttpServletRequest request,
@@ -131,9 +126,9 @@ public class JournalEntryController {
     }
 
     /**
-     * 按日期范围查询日记条目
-     *
-     * 示例：
+     * Get journal entries by date range
+     * 
+     * Example:
      *   GET /api/journal-entries/by-date-range?startDate=2025-12-01&endDate=2025-12-31
      *   Header: Authorization: Bearer <token>
      */
@@ -154,14 +149,14 @@ public class JournalEntryController {
     }
 
     /**
-     * 更新日记条目
-     *
-     * 示例：
+     * Update journal entry
+     * 
+     * Example:
      *   PUT /api/journal-entries/{id}
      *   Header: Authorization: Bearer <token>
      *   Body: {
-     *     "title": "更新的标题",
-     *     "contentText": "更新的内容...",
+     *     "title": "Updated title",
+     *     "contentText": "Updated content...",
      *     ...
      *   }
      */
@@ -175,45 +170,43 @@ public class JournalEntryController {
         }
 
         try {
-            System.out.println("更新日记请求 - userId: " + userId + ", entryId: " + id);
-            System.out.println("更新数据: " + updatedEntry);
+            System.out.println("Update journal request - userId: " + userId + ", entryId: " + id);
+            System.out.println("Update data: " + updatedEntry);
             
             Optional<JournalEntry> result = journalEntryService.updateJournalEntry(userId, id, updatedEntry);
             
             if (result.isPresent()) {
-                System.out.println("更新成功: " + result.get());
+                System.out.println("Update successful: " + result.get());
                 return ResponseEntity.ok(result.get());
             } else {
-                System.out.println("未找到日记条目: " + id);
+                System.out.println("Journal entry not found: " + id);
                 return ResponseEntity.notFound().build();
             }
         } catch (org.springframework.dao.OptimisticLockingFailureException e) {
-            // 处理乐观锁冲突（并发更新冲突）
-            System.err.println("并发更新冲突: " + e.getMessage());
+            System.err.println("Concurrent update conflict: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .header("X-Error-Message", "日记已被其他操作修改，请刷新后重试")
+                    .header("X-Error-Message", "Journal entry has been modified by another operation, please refresh and retry")
                     .build();
         } catch (IllegalArgumentException e) {
-            System.err.println("权限错误: " + e.getMessage());
+            System.err.println("Authorization error: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(403).build();
         } catch (IllegalStateException e) {
-            System.err.println("状态错误: " + e.getMessage());
+            System.err.println("State error: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).build();
         } catch (Exception e) {
-            // 记录异常日志，返回详细错误信息
-            System.err.println("更新日记失败: " + e.getMessage());
-            System.err.println("异常类型: " + e.getClass().getName());
+            System.err.println("Failed to update journal: " + e.getMessage());
+            System.err.println("Exception type: " + e.getClass().getName());
             e.printStackTrace();
             return ResponseEntity.status(500).build();
         }
     }
 
     /**
-     * 删除日记条目
-     *
-     * 示例：
+     * Delete journal entry
+     * 
+     * Example:
      *   DELETE /api/journal-entries/{id}
      *   Header: Authorization: Bearer <token>
      */
@@ -234,15 +227,14 @@ public class JournalEntryController {
     }
 
     /**
-     * 初始化或获取当天的 JournalEntry。
-     *
-     * 前端在用户打开 APP（或登录成功）后调用一次即可。
-     * 如果该用户当天还没有记录，则创建一条 totalFocusMinutes=0 的记录；
-     * 如果已经存在，则直接返回已有记录。
-     *
-     * 注意：userId 从 token 中自动获取，无需在请求参数中传递
-     *
-     * 示例：
+     * Initialize or get today's journal entry
+     * 
+     * Call once when user opens the app or after login.
+     * Creates a new entry with totalFocusMinutes=0 if none exists, otherwise returns existing entry.
+     * 
+     * Note: userId is automatically extracted from token
+     * 
+     * Example:
      *   GET /api/journal-entries/today
      *   Header: Authorization: Bearer <token>
      */
@@ -259,14 +251,14 @@ public class JournalEntryController {
     }
 
     /**
-     * 查询某天的专注总时长（分钟）。
-     *
-     * 注意：userId 从 token 中自动获取
-     *
-     * 示例：
+     * Get total focus minutes for a specific date
+     * 
+     * Note: userId is automatically extracted from token
+     * Returns 0 if no entry exists for that date
+     * 
+     * Example:
      *   GET /api/journal-entries/focus-time?date=2025-12-03
      *   Header: Authorization: Bearer <token>
-     * 如果当天没有记录，则返回 0。
      */
     @GetMapping("/focus-time")
     public ResponseEntity<Integer> getFocusTime(HttpServletRequest request,
@@ -284,17 +276,17 @@ public class JournalEntryController {
     }
 
     /**
-     * 查询某天的评价 / 总结（向后兼容接口）。
-     * 注意：现在一天可以有多个journal，此接口返回该天第一个创建的条目（如果有evaluation字段）
-     *
-     * 注意：userId 从 token 中自动获取
-     *
-     * 示例：
+     * Get evaluation/summary for a specific date (backward compatibility)
+     * Note: Multiple journals per day are allowed, this endpoint returns the first created entry with evaluation field
+     * 
+     * Note: userId is automatically extracted from token
+     * 
+     * Example:
      *   GET /api/journal-entries/evaluation?date=2025-12-03
      *   Header: Authorization: Bearer <token>
-     * 返回：
-     *   - 找到记录：返回第一个 JournalEntry（其中 evaluation 字段为该天的总结，可能为 null）
-     *   - 未找到记录：返回 404
+     * Returns:
+     *   - Found: First JournalEntry (evaluation field may be null)
+     *   - Not found: 404
      */
     @GetMapping("/evaluation")
     public ResponseEntity<JournalEntry> getEvaluation(HttpServletRequest request,
@@ -312,7 +304,6 @@ public class JournalEntryController {
             return ResponseEntity.notFound().build();
         }
         
-        // 返回第一个有evaluation的条目，或第一个条目
         JournalEntry entry = entries.stream()
                 .filter(e -> e.getEvaluation() != null && !e.getEvaluation().isEmpty())
                 .findFirst()
@@ -322,20 +313,20 @@ public class JournalEntryController {
     }
 
     /**
-     * 番茄钟结束后累计专注时间。
-     *
-     * 注意：userId 从 token 中自动获取，无需在请求体中传递
-     *
-     * 请求体示例：
+     * Add focus minutes after Pomodoro timer ends
+     * 
+     * Note: userId is automatically extracted from token
+     * 
+     * Request body example:
      * {
      *   "date": "2025-12-03",
      *   "focusMinutes": 25
      * }
-     *
-     * 逻辑：
-     *   - 如果该用户在这一天已经有记录，则在原来的 totalFocusMinutes 基础上累加
-     *   - 如果还没有记录，则创建一条新的 JournalEntry，总时长为本次 focusMinutes
-     *   - evaluation 字段不在这里修改（保持原值或为 null）
+     * 
+     * Logic:
+     *   - If entry exists for that day, add to existing totalFocusMinutes
+     *   - If no entry exists, create new JournalEntry with focusMinutes
+     *   - Evaluation field is not modified here
      */
     @PostMapping("/focus-time")
     public ResponseEntity<JournalEntry> addFocusMinutes(HttpServletRequest httpRequest,
@@ -358,16 +349,16 @@ public class JournalEntryController {
     }
 
     /**
-     * 更新或新增某天的评价内容。
-     *
-     * 注意：userId 从 token 中自动获取，无需在请求体中传递
-     *
-     * 示例请求：
+     * Update or insert evaluation for a specific date
+     * 
+     * Note: userId is automatically extracted from token
+     * 
+     * Example request:
      *   PUT /api/journal-entries/evaluation
      *   Header: Authorization: Bearer <token>
      *   {
      *     "date": "2025-12-03",
-     *     "evaluation": "今天状态不错，完成了所有计划。"
+     *     "evaluation": "Good state today, completed all plans."
      *   }
      */
     @PutMapping("/evaluation")
@@ -390,8 +381,8 @@ public class JournalEntryController {
     }
 
     /**
-     * 用于接收番茄钟结束时的 JSON 请求体
-     * 注意：userId 已从 token 中获取，不再需要在此传递
+     * Request body for Pomodoro timer focus time increment
+     * Note: userId is extracted from token, not needed in request body
      */
     public static class FocusIncrementRequest {
         private LocalDate date;
@@ -415,8 +406,8 @@ public class JournalEntryController {
     }
 
     /**
-     * 用于接收评价更新的请求体
-     * 注意：userId 已从 token 中获取，不再需要在此传递
+     * Request body for evaluation update
+     * Note: userId is extracted from token, not needed in request body
      */
     public static class EvaluationRequest {
         private LocalDate date;

@@ -14,11 +14,11 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * 用户认证相关接口：注册 + 登录 + 登出
- *
- * 说明：
- *   - 登录成功后返回 JWT token
- *   - 其他接口需要在 Header 中携带：Authorization: Bearer <token>
+ * User authentication endpoints: register + login + logout
+ * 
+ * Note:
+ *   - Returns JWT token after successful login
+ *   - Other endpoints require Authorization header: Bearer <token>
  */
 @RestController
 @RequestMapping("/auth")
@@ -31,21 +31,18 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     /**
-     * 用户注册
-     *
-     * URL:
-     *   POST /api/auth/register
-     *
-     * 请求体示例：
+     * User registration
+     * 
+     * URL: POST /api/auth/register
+     * 
+     * Request body example:
      *   {
      *     "username": "Alice",
      *     "email": "alice@example.com",
      *     "password": "123456"
      *   }
-     *
-     * 逻辑：
-     *   - 如果邮箱已被注册，返回 400
-     *   - 否则创建新用户并返回
+     * 
+     * Returns 400 if email already registered, otherwise creates new user
      */
     @PostMapping("/register")
     public ResponseEntity<User> register(@RequestBody RegisterRequest request) {
@@ -60,7 +57,6 @@ public class AuthController {
         );
 
         if (!created.isPresent()) {
-            // 邮箱重复
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
@@ -68,18 +64,17 @@ public class AuthController {
     }
 
     /**
-     * 用户登录
-     *
-     * URL:
-     *   POST /api/auth/login
-     *
-     * 请求体示例：
+     * User login
+     * 
+     * URL: POST /api/auth/login
+     * 
+     * Request body example:
      *   {
      *     "email": "alice@example.com",
      *     "password": "123456"
      *   }
-     *
-     * 返回示例：
+     * 
+     * Response example:
      *   {
      *     "token": "eyJhbGciOiJIUzUxMiJ9...",
      *     "user": {
@@ -88,10 +83,8 @@ public class AuthController {
      *       "email": "alice@example.com"
      *     }
      *   }
-     *
-     * 逻辑：
-     *   - 邮箱 + 密码匹配则生成 token 并返回
-     *   - 否则返回 401
+     * 
+     * Returns token if email and password match, otherwise returns 401
      */
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest request) {
@@ -115,17 +108,14 @@ public class AuthController {
     }
 
     /**
-     * 用户登出
-     *
-     * URL:
-     *   POST /api/auth/logout
-     *   Header: Authorization: Bearer <token>
-     *
-     * 逻辑：
-     *   - 验证 token 有效性（确保是合法用户）
-     *   - 返回成功响应，前端删除本地保存的 token
-     *   - 注意：JWT token 是无状态的，服务端无法主动"撤销" token
-     *     如果需要立即失效功能，可以引入 token 黑名单机制（如 Redis）
+     * User logout
+     * 
+     * URL: POST /api/auth/logout
+     * Header: Authorization: Bearer <token>
+     * 
+     * Validates token and returns success response. Frontend should delete local token.
+     * Note: JWT tokens are stateless, server cannot actively revoke tokens.
+     * For immediate invalidation, consider implementing token blacklist (e.g., Redis)
      */
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
@@ -134,14 +124,10 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // 返回成功，前端删除 token 即可
-        // 如果将来需要真正的"立即失效"，可以在这里将 token 加入黑名单
         Map<String, String> response = new HashMap<>();
         response.put("message", "Logout successful");
         return ResponseEntity.ok(response);
     }
-
-    // ====== DTO ======
 
     public static class RegisterRequest {
         private String username;

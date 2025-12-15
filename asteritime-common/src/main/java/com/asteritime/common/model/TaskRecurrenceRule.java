@@ -4,17 +4,17 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * 任务重复频率规则
+ * Task recurrence frequency rule
  *
- * 说明：
- *   - 目前只包含：规则 ID + 频率表达式
- *   - 频率表达式可以是可读字符串，例如：
- *       "1/day"   -> 一天一次
- *       "2/day"   -> 一天两次
- *       "1/week"  -> 一周一次
- *   - 后续如果要支持更复杂的自定义（比如具体时间点、每周几），可以：
- *       1) 约定更丰富的表达式格式，或者
- *       2) 拆成多个字段（单位、间隔、每天次数、具体时间点等）
+ * Note:
+ *   - Currently only contains: rule ID + frequency expression
+ *   - Frequency expression can be readable string, e.g.:
+ *       "1/day"   -> once per day
+ *       "2/day"   -> twice per day
+ *       "1/week"  -> once per week
+ *   - For future support of more complex customization (e.g., specific time, day of week):
+ *       1) Define richer expression format, or
+ *       2) Split into multiple fields (unit, interval, times per day, specific time, etc.)
  */
 @Entity
 @Table(
@@ -26,32 +26,32 @@ import java.time.LocalDateTime;
 public class TaskRecurrenceRule {
 
     /**
-     * 规则 ID（主键）
+     * Rule ID (primary key)
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
-     * 所属用户（外键关联到 users 表）
+     * Owner user (foreign key to users table)
      */
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     /**
-     * 重复频率表达式（同一用户下唯一）
+     * Recurrence frequency expression (unique per user)
      *
-     * 示例：
-     *   - "1/day"  -> 一天一次
-     *   - "2/day"  -> 一天两次
+     * Examples:
+     *   - "1/day"  -> once per day
+     *   - "2/day"  -> twice per day
      */
     @Column(name = "frequency_expression", nullable = false)
     private String frequencyExpression;
 
     /**
-     * 乐观锁版本号（用于并发控制）
-     * 每次更新时自动递增，防止并发更新冲突
+     * Optimistic lock version (for concurrency control)
+     * Auto-increments on each update to prevent concurrent update conflicts
      */
     @Version
     @Column(nullable = false)

@@ -4,11 +4,11 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * 任务类别
+ * Task category
  *
- * 说明：
- *   - 目前只包含类别 ID 和名称
- *   - 将来如果需要为类别添加图标，可以在此实体上新增字段（例如 iconUrl 或 iconCode）
+ * Note:
+ *   - Currently only contains category ID and name
+ *   - Can add icon fields (e.g., iconUrl or iconCode) in the future if needed
  */
 @Entity
 @Table(
@@ -20,28 +20,28 @@ import java.time.LocalDateTime;
 public class TaskCategory {
 
     /**
-     * 类别 ID（主键）
+     * Category ID (primary key)
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
-     * 所属用户（外键关联到 users 表）
+     * Owner user (foreign key to users table)
      */
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     /**
-     * 类别名称（同一用户下唯一）
+     * Category name (unique per user)
      */
     @Column(nullable = false)
     private String name;
 
     /**
-     * 乐观锁版本号（用于并发控制）
-     * 每次更新时自动递增，防止并发更新冲突
+     * Optimistic lock version (for concurrency control)
+     * Auto-increments on each update to prevent concurrent update conflicts
      */
     @Version
     @Column(nullable = false)

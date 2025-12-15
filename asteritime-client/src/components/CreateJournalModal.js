@@ -19,10 +19,10 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
   const [error, setError] = useState('');
   const [imageUrlsArray, setImageUrlsArray] = useState([]);
 
-  // 当编辑时，填充表单数据
+  // When editing, populate form data
   useEffect(() => {
     if (entry) {
-      // 解析图片URLs
+      // Parse image URLs
       let images = [];
       if (entry.imageUrls) {
         try {
@@ -44,7 +44,7 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
       });
       setImageUrlsArray(images);
     } else {
-      // 新建时重置表单
+      // Reset form when creating new
       setFormData({
         date: defaultDate || getTodayLocalDateString(),
         title: '',
@@ -69,7 +69,7 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
   };
 
   const handleImageUrlAdd = () => {
-    const url = prompt('请输入图片URL:');
+    const url = prompt('Please enter image URL:');
     if (url && url.trim()) {
       const newArray = [...imageUrlsArray, url.trim()];
       setImageUrlsArray(newArray);
@@ -95,13 +95,13 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
     setLoading(true);
 
     try {
-      // 准备数据
+      // Prepare data
       const journalData = {
         date: formData.date,
       };
 
       if (entry) {
-        // 更新：发送所有字段，包括空字符串（用于清空字段）
+        // Update: send all fields, including empty strings (to clear fields)
         journalData.title = formData.title || null;
         journalData.contentText = formData.contentText || null;
         journalData.imageUrls = formData.imageUrls || null;
@@ -112,7 +112,7 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
         
         await updateJournalEntry(entry.id, journalData);
       } else {
-        // 创建：只添加非空字段
+        // Create: only add non-empty fields
         if (formData.title) journalData.title = formData.title;
         if (formData.contentText) journalData.contentText = formData.contentText;
         if (formData.imageUrls) journalData.imageUrls = formData.imageUrls;
@@ -126,8 +126,8 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
 
       onSuccess();
     } catch (err) {
-      console.error('保存日记失败:', err);
-      setError(err.message || '保存日记失败，请重试');
+      console.error('Failed to save journal entry:', err);
+      setError(err.message || 'Failed to save journal entry, please try again');
     } finally {
       setLoading(false);
     }
@@ -139,7 +139,7 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content journal-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{entry ? '编辑日记' : '新建日记'}</h2>
+          <h2>{entry ? 'Edit Journal' : 'New Journal'}</h2>
           <button className="modal-close" onClick={onClose}>
             ×
           </button>
@@ -149,7 +149,7 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="date">日期 *</label>
+            <label htmlFor="date">Date *</label>
             <input
               type="date"
               id="date"
@@ -157,79 +157,80 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
               value={formData.date}
               onChange={handleChange}
               required
+              lang="en"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="title">标题</label>
+            <label htmlFor="title">Title</label>
             <input
               type="text"
               id="title"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder="给这篇日记起个标题..."
+              placeholder="Give this journal entry a title..."
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="contentText">内容</label>
+            <label htmlFor="contentText">Content</label>
             <textarea
               id="contentText"
               name="contentText"
               value={formData.contentText}
               onChange={handleChange}
-              placeholder="记录今天发生的事情..."
+              placeholder="Record what happened today..."
               rows={8}
             />
           </div>
 
-          {/* 分类标签 */}
+          {/* Category tags */}
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="weather">天气</label>
+              <label htmlFor="weather">Weather</label>
               <input
                 type="text"
                 id="weather"
                 name="weather"
                 value={formData.weather}
                 onChange={handleChange}
-                placeholder="例如：晴天、雨天"
+                placeholder="e.g., Sunny, Rainy"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="mood">心情</label>
+              <label htmlFor="mood">Mood</label>
               <input
                 type="text"
                 id="mood"
                 name="mood"
                 value={formData.mood}
                 onChange={handleChange}
-                placeholder="例如：开心、平静"
+                placeholder="e.g., Happy, Calm"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="activity">活动</label>
+              <label htmlFor="activity">Activity</label>
               <input
                 type="text"
                 id="activity"
                 name="activity"
                 value={formData.activity}
                 onChange={handleChange}
-                placeholder="例如：工作、学习"
+                placeholder="e.g., Work, Study"
               />
             </div>
           </div>
 
-          {/* 图片 */}
+          {/* Images */}
           <div className="form-group">
-            <label>图片</label>
+            <label>Images</label>
             <div className="image-urls-section">
               {imageUrlsArray.map((url, index) => (
                 <div key={index} className="image-url-item">
-                  <img src={url} alt={`预览 ${index + 1}`} className="image-preview" />
+                  <img src={url} alt={`Preview ${index + 1}`} className="image-preview" />
                   <span className="image-url-text" title={url}>
                     {url.length > 40 ? url.substring(0, 40) + '...' : url}
                   </span>
@@ -238,7 +239,7 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
                     className="btn-remove-image"
                     onClick={() => handleImageUrlRemove(index)}
                   >
-                    删除
+                    Delete
                   </button>
                 </div>
               ))}
@@ -247,14 +248,14 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
                 className="btn-add-image"
                 onClick={handleImageUrlAdd}
               >
-                + 添加图片URL
+                + Add Image URL
               </button>
             </div>
           </div>
 
-          {/* 语音 */}
+          {/* Voice */}
           <div className="form-group">
-            <label htmlFor="voiceNoteUrl">语音记录URL</label>
+            <label htmlFor="voiceNoteUrl">Voice Note URL</label>
             <input
               type="url"
               id="voiceNoteUrl"
@@ -266,7 +267,7 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
             {formData.voiceNoteUrl && (
               <div className="voice-preview">
                 <audio controls src={formData.voiceNoteUrl}>
-                  您的浏览器不支持音频播放
+                  Your browser does not support audio playback
                 </audio>
               </div>
             )}
@@ -274,10 +275,10 @@ function CreateJournalModal({ isOpen, onClose, onSuccess, entry, defaultDate }) 
 
           <div className="modal-actions">
             <button type="button" className="btn-cancel" onClick={onClose}>
-              取消
+              Cancel
             </button>
             <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? '保存中...' : entry ? '更新' : '创建'}
+              {loading ? 'Saving...' : entry ? 'Update' : 'Create'}
             </button>
           </div>
         </form>

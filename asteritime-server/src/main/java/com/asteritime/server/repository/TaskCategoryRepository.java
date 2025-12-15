@@ -10,17 +10,17 @@ import java.util.Optional;
 public interface TaskCategoryRepository extends JpaRepository<TaskCategory, Long> {
     
     /**
-     * 查询指定用户的所有类别
+     * Find all categories for a specific user
      */
     java.util.List<TaskCategory> findByUser_Id(Long userId);
     
     /**
-     * 查询指定用户的指定类别（用于检查重复）
+     * Find specific category for a specific user (for duplicate checking)
      */
     Optional<TaskCategory> findByUser_IdAndName(Long userId, String name);
     
     /**
-     * 查询指定用户的指定类别（按ID）
+     * Find specific category for a specific user (by ID)
      */
     Optional<TaskCategory> findByIdAndUser_Id(Long id, Long userId);
 }

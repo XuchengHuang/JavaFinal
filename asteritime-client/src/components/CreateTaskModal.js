@@ -19,7 +19,7 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
   const [error, setError] = useState('');
   const [loadingOptions, setLoadingOptions] = useState(true);
   
-  // 小弹窗状态
+  // Small modal state
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showRecurrenceModal, setShowRecurrenceModal] = useState(false);
   const [categoryName, setCategoryName] = useState('');
@@ -28,7 +28,7 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [creatingRecurrence, setCreatingRecurrence] = useState(false);
 
-  // 加载选项数据
+  // Load options data
   useEffect(() => {
     if (isOpen) {
       loadOptions();
@@ -45,8 +45,8 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
       setCategories(cats);
       setRecurrenceRules(rules);
     } catch (err) {
-      console.error('加载选项失败:', err);
-      setError('加载选项失败，请刷新页面重试');
+      console.error('Failed to load options:', err);
+      setError('Failed to load options, please refresh and try again');
     } finally {
       setLoadingOptions(false);
     }
@@ -66,14 +66,14 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
     setLoading(true);
 
     try {
-      // 构建请求数据
+      // Build request data
       const taskData = {
         title: formData.title,
         quadrant: parseInt(formData.quadrant),
-        status: 'TODO', // 新建任务默认为TODO状态
+        status: 'TODO', // New tasks default to TODO status
       };
 
-      // 可选字段
+      // Optional fields
       if (formData.description) {
         taskData.description = formData.description;
       }
@@ -83,10 +83,10 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
       if (formData.recurrenceRule) {
         taskData.recurrenceRule = { id: parseInt(formData.recurrenceRule) };
       }
-      // 转换 datetime-local 格式为 ISO 8601 格式
+      // Convert datetime-local format to ISO 8601 format
       if (formData.plannedStartTime) {
-        // datetime-local 格式: "2025-12-07T14:30" (没有秒数)
-        // 需要转换为: "2025-12-07T14:30:00"
+        // datetime-local format: "2025-12-07T14:30" (no seconds)
+        // Need to convert to: "2025-12-07T14:30:00"
         const startTime = formData.plannedStartTime.includes(':') && 
                           formData.plannedStartTime.split(':').length === 2
                           ? formData.plannedStartTime + ':00'
@@ -103,7 +103,7 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
 
       await createTask(taskData);
       
-      // 重置表单
+      // Reset form
       setFormData({
         title: '',
         description: '',
@@ -117,13 +117,13 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err.message || '创建任务失败，请稍后重试');
+      setError(err.message || 'Failed to create task, please try again later');
     } finally {
       setLoading(false);
     }
   };
 
-  // 创建任务类别
+  // Create task category
   const handleCreateCategory = async (e) => {
     e.preventDefault();
     if (!categoryName.trim()) {
@@ -138,13 +138,13 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
       setCategoryName('');
       setShowCategoryModal(false);
     } catch (err) {
-      alert(err.message || '创建任务类别失败');
+      alert(err.message || 'Failed to create task category');
     } finally {
       setCreatingCategory(false);
     }
   };
 
-  // 创建重复规则
+  // Create recurrence rule
   const handleCreateRecurrence = async (e) => {
     e.preventDefault();
     const frequencyExpression = `${recurrenceCount}/${recurrenceUnit}`;
@@ -158,7 +158,7 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
       setRecurrenceUnit('day');
       setShowRecurrenceModal(false);
     } catch (err) {
-      alert(err.message || '创建重复规则失败');
+      alert(err.message || 'Failed to create recurrence rule');
     } finally {
       setCreatingRecurrence(false);
     }
@@ -170,16 +170,16 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>创建新任务</h2>
+          <h2>Create New Task</h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
         <form onSubmit={handleSubmit} className="task-form">
           {error && <div className="form-error">{error}</div>}
 
-          {/* 任务标题 */}
+          {/* Task Title */}
           <div className="form-group">
-            <label htmlFor="title">任务标题 *</label>
+            <label htmlFor="title">Task Title *</label>
             <input
               type="text"
               id="title"
@@ -187,28 +187,28 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
               value={formData.title}
               onChange={handleChange}
               required
-              placeholder="请输入任务标题"
+              placeholder="Enter task title"
               disabled={loading}
             />
           </div>
 
-          {/* 任务描述 */}
+          {/* Task Description */}
           <div className="form-group">
-            <label htmlFor="description">任务描述</label>
+            <label htmlFor="description">Task Description</label>
             <textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="请输入任务描述（可选）"
+              placeholder="Enter task description (optional)"
               rows="3"
               disabled={loading}
             />
           </div>
 
-          {/* 四象限 */}
+          {/* Quadrant */}
           <div className="form-group">
-            <label htmlFor="quadrant">四象限 *</label>
+            <label htmlFor="quadrant">Quadrant *</label>
             <select
               id="quadrant"
               name="quadrant"
@@ -217,20 +217,20 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
               required
               disabled={loading}
             >
-              <option value={1}>象限 1: Urgent & Important</option>
-              <option value={2}>象限 2: Not Urgent & Important</option>
-              <option value={3}>象限 3: Urgent & Not Important</option>
-              <option value={4}>象限 4: Not Urgent & Not Important</option>
+              <option value={1}>Quadrant 1: Urgent & Important</option>
+              <option value={2}>Quadrant 2: Not Urgent & Important</option>
+              <option value={3}>Quadrant 3: Urgent & Not Important</option>
+              <option value={4}>Quadrant 4: Not Urgent & Not Important</option>
             </select>
           </div>
 
-          {/* 任务类别 */}
+          {/* Task Category */}
           <div className="form-group">
-            <label htmlFor="type">任务类别</label>
+            <label htmlFor="type">Task Category</label>
             <div className="form-group-with-button">
               {loadingOptions ? (
                 <select disabled>
-                  <option>加载中...</option>
+                  <option>Loading...</option>
                 </select>
               ) : (
                 <select
@@ -240,7 +240,7 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
                   onChange={handleChange}
                   disabled={loading || categories.length === 0}
                 >
-                  <option value="">无（可选）</option>
+                  <option value="">None (optional)</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
@@ -253,23 +253,23 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
                 className="btn-add"
                 onClick={() => setShowCategoryModal(true)}
                 disabled={loading || loadingOptions}
-                title="创建新类别"
+                title="Create new category"
               >
                 +
               </button>
             </div>
             {categories.length === 0 && !loadingOptions && (
-              <span className="form-hint">暂无类别，可在设置中创建</span>
+              <span className="form-hint">No categories available, can create in settings</span>
             )}
           </div>
 
-          {/* 重复规则 */}
+          {/* Recurrence Rule */}
           <div className="form-group">
-            <label htmlFor="recurrenceRule">重复规则</label>
+            <label htmlFor="recurrenceRule">Recurrence Rule</label>
             <div className="form-group-with-button">
               {loadingOptions ? (
                 <select disabled>
-                  <option>加载中...</option>
+                  <option>Loading...</option>
                 </select>
               ) : (
                 <select
@@ -279,7 +279,7 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
                   onChange={handleChange}
                   disabled={loading || recurrenceRules.length === 0}
                 >
-                  <option value="">无（可选）</option>
+                  <option value="">None (optional)</option>
                   {recurrenceRules.map((rule) => (
                     <option key={rule.id} value={rule.id}>
                       {rule.frequencyExpression}
@@ -292,19 +292,19 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
                 className="btn-add"
                 onClick={() => setShowRecurrenceModal(true)}
                 disabled={loading || loadingOptions}
-                title="创建新规则"
+                title="Create new rule"
               >
                 +
               </button>
             </div>
             {recurrenceRules.length === 0 && !loadingOptions && (
-              <span className="form-hint">暂无重复规则，可在设置中创建</span>
+              <span className="form-hint">No recurrence rules available, can create in settings</span>
             )}
           </div>
 
-          {/* 计划开始时间 */}
+          {/* Planned Start Time */}
           <div className="form-group">
-            <label htmlFor="plannedStartTime">计划开始时间</label>
+            <label htmlFor="plannedStartTime">Planned Start Time</label>
             <input
               type="datetime-local"
               id="plannedStartTime"
@@ -312,12 +312,13 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
               value={formData.plannedStartTime}
               onChange={handleChange}
               disabled={loading}
+              lang="en"
             />
           </div>
 
-          {/* 计划结束时间 */}
+          {/* Planned End Time */}
           <div className="form-group">
-            <label htmlFor="plannedEndTime">计划结束时间</label>
+            <label htmlFor="plannedEndTime">Planned End Time</label>
             <input
               type="datetime-local"
               id="plannedEndTime"
@@ -325,6 +326,7 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
               value={formData.plannedEndTime}
               onChange={handleChange}
               disabled={loading}
+              lang="en"
             />
           </div>
 
@@ -335,36 +337,36 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
               className="btn-cancel"
               disabled={loading}
             >
-              取消
+              Cancel
             </button>
             <button
               type="submit"
               className="btn-submit"
               disabled={loading}
             >
-              {loading ? '创建中...' : '创建'}
+              {loading ? 'Creating...' : 'Create'}
             </button>
           </div>
         </form>
       </div>
 
-      {/* 创建任务类别小弹窗 */}
+      {/* Create task category small modal */}
       {showCategoryModal && (
         <div className="small-modal-overlay" onClick={() => setShowCategoryModal(false)}>
           <div className="small-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="small-modal-header">
-              <h3>创建任务类别</h3>
+              <h3>Create Task Category</h3>
               <button className="small-modal-close" onClick={() => setShowCategoryModal(false)}>×</button>
             </div>
             <form onSubmit={handleCreateCategory} className="small-modal-form">
               <div className="form-group">
-                <label htmlFor="categoryName">类别名称 *</label>
+                <label htmlFor="categoryName">Category Name *</label>
                 <input
                   type="text"
                   id="categoryName"
                   value={categoryName}
                   onChange={(e) => setCategoryName(e.target.value)}
-                  placeholder="请输入类别名称"
+                  placeholder="Enter category name"
                   required
                   disabled={creatingCategory}
                   autoFocus
@@ -377,14 +379,14 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
                   className="btn-cancel"
                   disabled={creatingCategory}
                 >
-                  取消
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="btn-submit"
                   disabled={creatingCategory}
                 >
-                  {creatingCategory ? '创建中...' : '创建'}
+                  {creatingCategory ? 'Creating...' : 'Create'}
                 </button>
               </div>
             </form>
@@ -392,41 +394,41 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
         </div>
       )}
 
-      {/* 创建重复规则小弹窗 */}
+      {/* Create recurrence rule small modal */}
       {showRecurrenceModal && (
         <div className="small-modal-overlay" onClick={() => setShowRecurrenceModal(false)}>
           <div className="small-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="small-modal-header">
-              <h3>创建重复规则</h3>
+              <h3>Create Recurrence Rule</h3>
               <button className="small-modal-close" onClick={() => setShowRecurrenceModal(false)}>×</button>
             </div>
             <form onSubmit={handleCreateRecurrence} className="small-modal-form">
               <div className="form-group">
-                <label htmlFor="recurrenceCount">重复次数 *</label>
+                <label htmlFor="recurrenceCount">Repeat Count *</label>
                 <select
                   id="recurrenceCount"
                   value={recurrenceCount}
                   onChange={(e) => setRecurrenceCount(e.target.value)}
                   disabled={creatingRecurrence}
                 >
-                  <option value="1">一次</option>
-                  <option value="2">两次</option>
-                  <option value="3">三次</option>
-                  <option value="4">四次</option>
-                  <option value="5">五次</option>
+                  <option value="1">Once</option>
+                  <option value="2">Twice</option>
+                  <option value="3">Three times</option>
+                  <option value="4">Four times</option>
+                  <option value="5">Five times</option>
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="recurrenceUnit">时间单位 *</label>
+                <label htmlFor="recurrenceUnit">Time Unit *</label>
                 <select
                   id="recurrenceUnit"
                   value={recurrenceUnit}
                   onChange={(e) => setRecurrenceUnit(e.target.value)}
                   disabled={creatingRecurrence}
                 >
-                  <option value="day">天</option>
-                  <option value="week">周</option>
-                  <option value="month">月</option>
+                  <option value="day">Day</option>
+                  <option value="week">Week</option>
+                  <option value="month">Month</option>
                 </select>
               </div>
               <div className="form-actions">
@@ -436,14 +438,14 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
                   className="btn-cancel"
                   disabled={creatingRecurrence}
                 >
-                  取消
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="btn-submit"
                   disabled={creatingRecurrence}
                 >
-                  {creatingRecurrence ? '创建中...' : '创建'}
+                  {creatingRecurrence ? 'Creating...' : 'Create'}
                 </button>
               </div>
             </form>

@@ -5,10 +5,10 @@ import './Timeline.css';
 
 function Timeline() {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    // 获取本周一的日期
+    // Get Monday of this week
     const today = new Date();
     const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1); // 调整到周一
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
     const monday = new Date(today.setDate(diff));
     monday.setHours(0, 0, 0, 0);
     return monday;
@@ -20,7 +20,7 @@ function Timeline() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  // 计算当前周的日期范围
+  // Calculate date range for current week
   const weekDates = useMemo(() => {
     const dates = [];
     for (let i = 0; i < 7; i++) {
@@ -31,7 +31,7 @@ function Timeline() {
     return dates;
   }, [currentWeekStart]);
 
-  // 格式化本地时间为 YYYY-MM-DDTHH:mm:ss 格式（不带时区）
+  // Format local time as YYYY-MM-DDTHH:mm:ss format (without timezone)
   const formatLocalDateTime = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -42,7 +42,7 @@ function Timeline() {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
   };
 
-  // 计算周的开始和结束时间（本地时间格式，不带时区）
+  // Calculate week start and end time (local time format, without timezone)
   const weekTimeRange = useMemo(() => {
     const start = new Date(currentWeekStart);
     start.setHours(0, 0, 0, 0);
@@ -57,7 +57,7 @@ function Timeline() {
     };
   }, [currentWeekStart]);
 
-  // 加载任务
+  // Load tasks
   useEffect(() => {
     const loadTasks = async () => {
       try {
@@ -68,7 +68,7 @@ function Timeline() {
         });
         setTasks(weekTasks);
       } catch (error) {
-        console.error('加载任务失败:', error);
+        console.error('Failed to load tasks:', error);
       } finally {
         setLoading(false);
       }
@@ -77,16 +77,16 @@ function Timeline() {
     loadTasks();
   }, [weekTimeRange]);
 
-  // 更新当前时间
+  // Update current time
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // 每分钟更新一次
+    }, 60000); // Update every minute
 
     return () => clearInterval(interval);
   }, []);
 
-  // 格式化本地日期为 YYYY-MM-DD 格式（不使用 UTC）
+  // Format local date as YYYY-MM-DD format (not using UTC)
   const formatLocalDate = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -94,16 +94,16 @@ function Timeline() {
     return `${year}-${month}-${day}`;
   };
 
-  // 解析时间字符串为本地时间（如果时间字符串不包含时区信息，将其当作本地时间处理）
+  // Parse time string to local time (if time string does not contain timezone information, treat it as local time)
   const parseLocalDateTime = (dateString) => {
     if (!dateString) return null;
-    // 如果时间字符串不包含时区信息，将其当作本地时间处理
+    // If time string does not contain timezone information, treat it as local time
     if (dateString.includes('T')) {
       if (dateString.endsWith('Z') || dateString.includes('+') || dateString.includes('-', 10)) {
-        // 有时区信息，使用标准解析
+        // Has timezone information, use standard parsing
         return new Date(dateString);
       } else {
-        // 没有时区信息，当作本地时间处理
+        // No timezone information, treat as local time
         const [datePart, timePart] = dateString.split('T');
         const [year, month, day] = datePart.split('-').map(Number);
         const [hours, minutes, seconds] = (timePart || '00:00:00').split(':').map(Number);
@@ -113,19 +113,19 @@ function Timeline() {
     return new Date(dateString);
   };
 
-  // 获取某一天的任务
+  // Get tasks for a specific day
   const getTasksForDay = (date) => {
     const dateStr = formatLocalDate(date);
     return tasks.filter(task => {
-      // 对于已完成、延期、已取消的任务，优先使用实际时间；否则使用计划时间
+      // For completed, delayed, cancelled tasks, prefer actual time; otherwise use planned time
       const isPastTask = task.status === 'DONE' || task.status === 'DELAY' || task.status === 'CANCEL';
       
       let timeToCheck;
       if (isPastTask) {
-        // 已完成的任务：优先使用actualStartTime，如果没有则使用actualEndTime，最后fallback到plannedStartTime
+        // Completed tasks: prefer actualStartTime, if not available use actualEndTime, finally fallback to plannedStartTime
         timeToCheck = task.actualStartTime || task.actualEndTime || task.plannedStartTime;
       } else {
-        // 未完成的任务：使用计划时间
+        // Incomplete tasks: use planned time
         timeToCheck = task.plannedStartTime;
       }
       
@@ -137,9 +137,9 @@ function Timeline() {
     });
   };
 
-  // 检查两个任务是否重叠
+  // Check if two tasks overlap
   const tasksOverlap = (task1, task2) => {
-    // 获取任务的显示时间（已过去的事件使用实际时间，否则使用计划时间）
+    // Get task display time (past events use actual time, otherwise use planned time)
     const getTaskTime = (task) => {
       const isPastTask = task.status === 'DONE' || task.status === 'DELAY' || task.status === 'CANCEL';
       return {
@@ -167,7 +167,7 @@ function Timeline() {
     return !(end1.getTime() <= start2.getTime() || end2.getTime() <= start1.getTime());
   };
 
-  // 将任务分组（重叠的任务在同一组）
+  // Group tasks (overlapping tasks in the same group)
   const groupOverlappingTasks = (dayTasks) => {
     const groups = [];
     const processed = new Set();
@@ -178,10 +178,10 @@ function Timeline() {
       const group = [task];
       processed.add(index);
 
-      // 查找所有与当前任务重叠的任务
+      // Find all tasks that overlap with current task
       dayTasks.forEach((otherTask, otherIndex) => {
         if (index !== otherIndex && !processed.has(otherIndex)) {
-          // 检查是否与组内任何任务重叠
+          // Check if overlaps with any task in the group
           const overlapsWithGroup = group.some(t => tasksOverlap(t, otherTask));
           if (overlapsWithGroup) {
             group.push(otherTask);
@@ -196,21 +196,21 @@ function Timeline() {
     return groups;
   };
 
-  // 计算任务在时间轴上的位置和高度
+  // Calculate task position and height on timeline
   const getTaskPosition = (task) => {
-    // 对于已完成、延期、已取消的任务，优先使用实际时间；否则使用计划时间
+    // For completed, delayed, cancelled tasks, prefer actual time; otherwise use planned time
     const isPastTask = task.status === 'DONE' || task.status === 'DELAY' || task.status === 'CANCEL';
     
-    // 确定使用的时间：如果已完成任务有actualStartTime就用actualStartTime，否则用plannedStartTime
-    // 如果已完成任务有actualEndTime就用actualEndTime，否则用plannedEndTime
+    // Determine time to use: if completed task has actualStartTime use it, otherwise use plannedStartTime
+    // If completed task has actualEndTime use it, otherwise use plannedEndTime
     let startTime, endTime;
     
     if (isPastTask) {
-      // 已完成的任务：优先使用实际时间，如果没有则使用计划时间
+      // Completed tasks: prefer actual time, if not available use planned time
       startTime = task.actualStartTime || task.plannedStartTime;
       endTime = task.actualEndTime || task.plannedEndTime;
     } else {
-      // 未完成的任务：使用计划时间
+      // Incomplete tasks: use planned time
       startTime = task.plannedStartTime;
       endTime = task.plannedEndTime;
     }
@@ -221,33 +221,33 @@ function Timeline() {
     const end = parseLocalDateTime(endTime);
     if (!start || !end) return null;
     
-    // 计算从0点开始的分钟数（只考虑时间部分，不考虑日期）
+    // Calculate minutes from 0:00 (only consider time part, not date)
     const startMinutes = start.getHours() * 60 + start.getMinutes();
     const endMinutes = end.getHours() * 60 + end.getMinutes();
     
-    // 如果结束时间在开始时间之前（跨天情况），调整结束时间
+    // If end time is before start time (cross-day case), adjust end time
     let duration = endMinutes - startMinutes;
     if (duration < 0) {
-      // 跨天情况，假设任务持续到第二天同一时间
+      // Cross-day case, assume task continues to same time next day
       duration = (24 * 60) - startMinutes + endMinutes;
     }
     
-    duration = Math.max(duration, 15); // 最小15分钟
+    duration = Math.max(duration, 15); // Minimum 15 minutes
 
-    // 每个小时60像素，每分钟1像素
+    // 60 pixels per hour, 1 pixel per minute
     const top = startMinutes;
     const height = duration;
 
     return { top, height };
   };
 
-  // 处理任务点击
+  // Handle task click
   const handleTaskClick = (task) => {
     setSelectedTask(task);
     setIsDetailModalOpen(true);
   };
 
-  // 获取状态颜色
+  // Get status color
   const getStatusColor = (status) => {
     const colors = {
       TODO: '#6c757d',
@@ -259,21 +259,21 @@ function Timeline() {
     return colors[status] || '#6c757d';
   };
 
-  // 导航到上一周
+  // Navigate to previous week
   const goToPreviousWeek = () => {
     const prevWeek = new Date(currentWeekStart);
     prevWeek.setDate(prevWeek.getDate() - 7);
     setCurrentWeekStart(prevWeek);
   };
 
-  // 导航到下一周
+  // Navigate to next week
   const goToNextWeek = () => {
     const nextWeek = new Date(currentWeekStart);
     nextWeek.setDate(nextWeek.getDate() + 7);
     setCurrentWeekStart(nextWeek);
   };
 
-  // 导航到今天所在周
+  // Navigate to week containing today
   const goToToday = () => {
     const today = new Date();
     const day = today.getDay();
@@ -283,26 +283,26 @@ function Timeline() {
     setCurrentWeekStart(monday);
   };
 
-  // 生成时间轴（0-24小时）
+  // Generate timeline (0-24 hours)
   const timeSlots = Array.from({ length: 24 }, (_, i) => i);
 
-  // 格式化日期显示
+  // Format date display
   const formatDate = (date) => {
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const weekday = weekdays[date.getDay()];
     return { month, day, weekday };
   };
 
-  // 格式化周范围显示
+  // Format week range display
   const formatWeekRange = () => {
     const start = weekDates[0];
     const end = weekDates[6];
-    return `${start.getMonth() + 1}月${start.getDate()}日 - ${end.getMonth() + 1}月${end.getDate()}日`;
+    return `${start.getMonth() + 1}/${start.getDate()} - ${end.getMonth() + 1}/${end.getDate()}`;
   };
 
-  // 检查是否是今天
+  // Check if it's today
   const isToday = (date) => {
     const today = new Date();
     return (
@@ -312,7 +312,7 @@ function Timeline() {
     );
   };
 
-  // 格式化任务时间
+  // Format task time
   const formatTaskTime = (dateString) => {
     if (!dateString) return '';
     const date = parseLocalDateTime(dateString);
@@ -322,18 +322,18 @@ function Timeline() {
     return `${hours}:${minutes}`;
   };
 
-  // 获取任务的显示时间（已过去的事件使用实际时间，否则使用计划时间）
+  // Get task display time (past events use actual time, otherwise use planned time)
   const getTaskDisplayTime = (task) => {
     const isPastTask = task.status === 'DONE' || task.status === 'DELAY' || task.status === 'CANCEL';
     
     if (isPastTask) {
-      // 已完成的任务：优先使用实际时间，如果没有则使用计划时间
+      // Completed tasks: prefer actual time, if not available use planned time
       return {
         startTime: task.actualStartTime || task.plannedStartTime,
         endTime: task.actualEndTime || task.plannedEndTime,
       };
     } else {
-      // 未完成的任务：使用计划时间
+      // Incomplete tasks: use planned time
       return {
         startTime: task.plannedStartTime,
         endTime: task.plannedEndTime,
@@ -344,28 +344,28 @@ function Timeline() {
   if (loading) {
     return (
       <div className="page-content">
-        <div className="timeline-loading">加载中...</div>
+        <div className="timeline-loading">Loading...</div>
       </div>
     );
   }
 
   return (
     <div className="page-content timeline-container">
-      {/* 周导航栏 */}
+      {/* Week navigation bar */}
       <div className="timeline-header">
         <div className="timeline-nav">
           <button onClick={goToPreviousWeek} className="nav-btn">‹</button>
-          <button onClick={goToToday} className="nav-btn today-btn">今天</button>
+          <button onClick={goToToday} className="nav-btn today-btn">Today</button>
           <button onClick={goToNextWeek} className="nav-btn">›</button>
         </div>
         <div className="timeline-week-range">{formatWeekRange()}</div>
       </div>
 
-      {/* 时间线主体 */}
+      {/* Timeline body */}
       <div className="timeline-body">
-        {/* 时间轴 */}
+        {/* Time axis */}
         <div className="timeline-time-column">
-          {/* 时间轴头部，与日期头部对齐 */}
+          {/* Time axis header, aligned with date header */}
           <div className="timeline-time-column-header"></div>
           {timeSlots.map((hour) => (
             <div key={hour} className="time-slot">
@@ -374,7 +374,7 @@ function Timeline() {
           ))}
         </div>
 
-        {/* 日期列 */}
+        {/* Date columns */}
         <div className="timeline-days-container">
           {weekDates.map((date, dayIndex) => {
             const { month, day, weekday } = formatDate(date);
@@ -383,7 +383,7 @@ function Timeline() {
 
             return (
               <div key={dayIndex} className="timeline-day-column">
-                {/* 日期头部 */}
+                {/* Date header */}
                 <div className={`day-header ${today ? 'today' : ''}`}>
                   <div className="day-weekday">{weekday}</div>
                   <div className={`day-date ${today ? 'today-date' : ''}`}>
@@ -391,14 +391,14 @@ function Timeline() {
                   </div>
                 </div>
 
-                {/* 时间格 */}
+                {/* Time slots */}
                 <div className="day-time-slots">
                   {timeSlots.map((hour) => (
                     <div key={hour} className="time-slot-cell"></div>
                   ))}
                 </div>
 
-                {/* 任务块 */}
+                {/* Task blocks */}
                 <div className="day-tasks">
                   {(() => {
                     const groups = groupOverlappingTasks(dayTasks);
@@ -407,7 +407,7 @@ function Timeline() {
                         const position = getTaskPosition(task);
                         if (!position) return null;
 
-                        // 计算重叠任务的宽度和位置
+                        // Calculate width and position of overlapping tasks
                         const groupSize = group.length;
                         const width = groupSize > 1 ? `${100 / groupSize}%` : '100%';
                         const left = groupSize > 1 ? `${(taskIndex * 100) / groupSize}%` : '0';
@@ -440,7 +440,7 @@ function Timeline() {
         </div>
       </div>
 
-      {/* 任务详情弹窗 */}
+      {/* Task detail modal */}
       <TaskDetailModal
         isOpen={isDetailModalOpen}
         task={selectedTask}

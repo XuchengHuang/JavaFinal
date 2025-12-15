@@ -18,28 +18,27 @@ public class TaskCategoryService {
     private TaskCategoryRepository taskCategoryRepository;
 
     /**
-     * 查询指定用户的所有类别
+     * Find all categories for a specific user
      */
     public List<TaskCategory> findAllByUserId(Long userId) {
         return taskCategoryRepository.findByUser_Id(userId);
     }
 
     /**
-     * 根据 ID 查询类别（验证属于指定用户）
+     * Find category by ID (validates ownership)
      */
     public Optional<TaskCategory> findByIdAndUserId(Long id, Long userId) {
         return taskCategoryRepository.findByIdAndUser_Id(id, userId);
     }
 
     /**
-     * 创建新类别
+     * Create new category
      * 
-     * @param userId 用户ID
-     * @param name 类别名称
-     * @return 创建成功的类别，如果名称已存在则返回 Optional.empty()
+     * @param userId User ID
+     * @param name Category name
+     * @return Created category, or Optional.empty() if name already exists
      */
     public Optional<TaskCategory> create(Long userId, String name) {
-        // 检查该用户下名称是否已存在
         if (taskCategoryRepository.findByUser_IdAndName(userId, name).isPresent()) {
             return Optional.empty();
         }
@@ -55,11 +54,11 @@ public class TaskCategoryService {
     }
 
     /**
-     * 删除类别（验证属于指定用户）
+     * Delete category (validates ownership)
      * 
-     * @param id 类别 ID
-     * @param userId 用户ID
-     * @return true 如果删除成功，false 如果类别不存在或不属于该用户
+     * @param id Category ID
+     * @param userId User ID
+     * @return true if deletion successful, false if category doesn't exist or doesn't belong to user
      */
     public boolean deleteByIdAndUserId(Long id, Long userId) {
         Optional<TaskCategory> categoryOpt = taskCategoryRepository.findByIdAndUser_Id(id, userId);

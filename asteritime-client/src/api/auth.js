@@ -1,35 +1,35 @@
 import { API_BASE_URL } from '../config/api';
 
 /**
- * 从 localStorage 获取 token
+ * Get token from localStorage
  */
 export const getToken = () => {
   return localStorage.getItem('token');
 };
 
 /**
- * 保存 token 到 localStorage
+ * Save token to localStorage
  */
 export const setToken = (token) => {
   localStorage.setItem('token', token);
 };
 
 /**
- * 移除 token
+ * Remove token from localStorage
  */
 export const removeToken = () => {
   localStorage.removeItem('token');
 };
 
 /**
- * 保存用户信息到 localStorage
+ * Save user info to localStorage
  */
 export const setUser = (user) => {
   localStorage.setItem('user', JSON.stringify(user));
 };
 
 /**
- * 从 localStorage 获取用户信息
+ * Get user info from localStorage
  */
 export const getUser = () => {
   const userStr = localStorage.getItem('user');
@@ -42,23 +42,23 @@ export const getUser = () => {
 };
 
 /**
- * 移除用户信息
+ * Remove user info from localStorage
  */
 export const removeUser = () => {
   localStorage.removeItem('user');
 };
 
 /**
- * 检查是否已登录
+ * Check if user is authenticated
  */
 export const isAuthenticated = () => {
   return !!getToken();
 };
 
 /**
- * 登录接口
- * @param {string} email - 用户邮箱
- * @param {string} password - 密码
+ * Login API
+ * @param {string} email - User email
+ * @param {string} password - Password
  * @returns {Promise<{token: string, user: object}>}
  */
 export const login = async (email, password) => {
@@ -75,19 +75,17 @@ export const login = async (email, password) => {
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('邮箱或密码错误');
+      throw new Error('Invalid email or password');
     }
-    throw new Error('登录失败，请稍后重试');
+    throw new Error('Login failed, please try again');
   }
 
   const data = await response.json();
   
-  // 保存 token 到 localStorage
   if (data.token) {
     setToken(data.token);
   }
   
-  // 保存用户信息到 localStorage
   if (data.user) {
     setUser(data.user);
   }
@@ -96,10 +94,10 @@ export const login = async (email, password) => {
 };
 
 /**
- * 注册接口
- * @param {string} username - 用户名
- * @param {string} email - 用户邮箱
- * @param {string} password - 密码
+ * Register API
+ * @param {string} username - Username
+ * @param {string} email - User email
+ * @param {string} password - Password
  * @returns {Promise<User>}
  */
 export const register = async (username, email, password) => {
@@ -117,16 +115,16 @@ export const register = async (username, email, password) => {
 
   if (!response.ok) {
     if (response.status === 400) {
-      throw new Error('邮箱已被注册');
+      throw new Error('Email already registered');
     }
-    throw new Error('注册失败，请稍后重试');
+    throw new Error('Registration failed, please try again');
   }
 
   return await response.json();
 };
 
 /**
- * 登出接口
+ * Logout API
  * @returns {Promise<void>}
  */
 export const logout = async () => {
@@ -143,18 +141,17 @@ export const logout = async () => {
       },
     });
   } catch (error) {
-    console.error('登出请求失败:', error);
+    console.error('Logout request failed:', error);
   } finally {
-    // 无论请求成功与否，都删除本地 token 和用户信息
     removeToken();
     removeUser();
   }
 };
 
 /**
- * 创建带认证头的 fetch 请求
- * @param {string} url - 请求 URL
- * @param {object} options - fetch 选项
+ * Create authenticated fetch request
+ * @param {string} url - Request URL
+ * @param {object} options - Fetch options
  * @returns {Promise<Response>}
  */
 export const authenticatedFetch = async (url, options = {}) => {

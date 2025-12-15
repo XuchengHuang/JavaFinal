@@ -14,18 +14,18 @@ import java.util.Optional;
 public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long> {
     
     /**
-     * 查找某个用户在某一天的所有日记条目（按创建时间倒序排列，最新的在前）
+     * Find all journal entries for a user on a specific date (ordered by creation time desc, newest first)
      */
     List<JournalEntry> findByUser_IdAndDateOrderByCreatedAtDesc(Long userId, LocalDate date);
     
     /**
-     * 查找某个用户的所有日志（按日期倒序排列，最新的在前）
+     * Find all journal entries for a user (ordered by date desc, newest first)
      */
     @Query("SELECT e FROM JournalEntry e WHERE e.user.id = :userId ORDER BY e.date DESC, e.createdAt DESC")
     List<JournalEntry> findByUser_IdOrderByDateDescCreatedAtDesc(@Param("userId") Long userId);
     
     /**
-     * 查找某个用户在日期范围内的所有日志（按日期倒序排列，最新的在前）
+     * Find all journal entries for a user within a date range (ordered by date desc, newest first)
      */
     @Query("SELECT e FROM JournalEntry e WHERE e.user.id = :userId AND e.date BETWEEN :startDate AND :endDate ORDER BY e.date DESC, e.createdAt DESC")
     List<JournalEntry> findByUser_IdAndDateBetweenOrderByDateDescCreatedAtDesc(
@@ -34,7 +34,7 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long
             @Param("endDate") LocalDate endDate);
     
     /**
-     * 根据ID查找日记条目，并加载User对象（避免懒加载异常）
+     * Find journal entry by ID and load User object (avoids lazy loading exception)
      */
     @Query("SELECT e FROM JournalEntry e JOIN FETCH e.user WHERE e.id = :id")
     Optional<JournalEntry> findByIdWithUser(@Param("id") Long id);

@@ -4,40 +4,40 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * 用户实体
+ * User entity
  */
 @Entity
 @Table(name = "users")
 public class User {
 
     /**
-     * 用户ID（主键）
+     * User ID (primary key)
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /**
-     * 用户名
+     * Username
      */
     @Column(nullable = false)
     private String username;
 
     /**
-     * 注册邮箱
+     * Registration email
      */
     @Column(nullable = false, unique = true)
     private String email;
 
     /**
-     * 登录密码（建议存储为加密/哈希值）
+     * Login password (recommended to store as encrypted/hashed value)
      */
     @Column(nullable = false)
     private String password;
 
     /**
-     * 乐观锁版本号（用于并发控制）
-     * 每次更新时自动递增，防止并发更新冲突
+     * Optimistic lock version (for concurrency control)
+     * Auto-increments on each update to prevent concurrent update conflicts
      */
     @Version
     @Column(nullable = false)

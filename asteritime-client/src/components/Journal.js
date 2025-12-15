@@ -20,22 +20,22 @@ function Journal() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
-  // 新增：视图状态 - 'list' 显示列表, 'detail' 显示详情
+  // New: View state - 'list' shows list, 'detail' shows detail
   const [viewMode, setViewMode] = useState('list');
-  // 新增：当前查看的journal详情
+  // New: Currently viewed journal detail
   const [viewingEntry, setViewingEntry] = useState(null);
 
-  // 加载数据
+  // Load data
   useEffect(() => {
     loadEntries();
   }, []);
 
-  // 当选择的日期改变时，加载该天的日记，并切换到列表视图
+  // When selected date changes, load journal entries for that day and switch to list view
   useEffect(() => {
     if (selectedDate) {
       loadEntriesByDate(selectedDate);
-      setViewMode('list'); // 切换日期时回到列表视图
-      setViewingEntry(null); // 清空详情
+      setViewMode('list'); // Return to list view when date changes
+      setViewingEntry(null); // Clear detail
     }
   }, [selectedDate]);
 
@@ -44,12 +44,12 @@ function Journal() {
       setLoading(true);
       setError('');
       const data = await getAllJournalEntries();
-      // 过滤掉自动创建的统计记录
+      // Filter out auto-created statistics records
       const filteredData = (Array.isArray(data) ? data : []).filter(
         entry => !isAutoCreatedStatsEntry(entry)
       );
       setAllEntries(filteredData);
-      // 如果有选中的日期，加载该天的日记
+      // If a date is selected, load journal entries for that day
       if (selectedDate) {
         const dayEntries = filteredData.filter(
           (entry) => entry.date === selectedDate
@@ -57,14 +57,14 @@ function Journal() {
         setEntries(dayEntries);
       }
     } catch (err) {
-      console.error('加载日记失败:', err);
-      const errorMsg = err.message || '加载日记失败，请刷新页面重试';
+      console.error('Failed to load journal entries:', err);
+      const errorMsg = err.message || 'Failed to load journal entries, please refresh and try again';
       setError(errorMsg);
       
-      // 如果是401错误，提示重新登录
-      if (errorMsg.includes('未授权') || errorMsg.includes('401')) {
+      // If 401 error, prompt to re-login
+      if (errorMsg.includes('Unauthorized') || errorMsg.includes('401')) {
         setTimeout(() => {
-          if (window.confirm('登录已过期，是否重新登录？')) {
+          if (window.confirm('Login has expired, would you like to login again?')) {
             window.location.href = '/login';
           }
         }, 1000);
@@ -80,20 +80,20 @@ function Journal() {
       setError('');
       const data = await getJournalEntriesByDate(date);
       console.log('Loaded entries for date', date, ':', data);
-      // 过滤掉自动创建的统计记录（只有专注时间，没有其他内容）
+      // Filter out auto-created statistics records (only focus time, no other content)
       const filteredData = (Array.isArray(data) ? data : []).filter(
         entry => !isAutoCreatedStatsEntry(entry)
       );
       setEntries(filteredData);
     } catch (err) {
-      console.error('加载日记失败:', err);
-      const errorMsg = err.message || '加载日记失败，请刷新页面重试';
+      console.error('Failed to load journal entries:', err);
+      const errorMsg = err.message || 'Failed to load journal entries, please refresh and try again';
       setError(errorMsg);
       
-      // 如果是401错误，提示重新登录
-      if (errorMsg.includes('未授权') || errorMsg.includes('401')) {
+      // If 401 error, prompt to re-login
+      if (errorMsg.includes('Unauthorized') || errorMsg.includes('401')) {
         setTimeout(() => {
-          if (window.confirm('登录已过期，是否重新登录？')) {
+          if (window.confirm('Login has expired, would you like to login again?')) {
             window.location.href = '/login';
           }
         }, 1000);
@@ -122,13 +122,13 @@ function Journal() {
     setIsDeleteModalOpen(true);
   };
 
-  // 点击journal条目，显示详情
+  // Click journal entry to show detail
   const handleEntryClick = (entry) => {
     setViewingEntry(entry);
     setViewMode('detail');
   };
 
-  // 返回列表视图
+  // Return to list view
   const handleBackToList = () => {
     setViewMode('list');
     setViewingEntry(null);
@@ -141,19 +141,19 @@ function Journal() {
       await deleteJournalEntry(selectedEntry.id);
       setIsDeleteModalOpen(false);
       setSelectedEntry(null);
-      // 如果正在查看详情且删除的是当前查看的条目，返回列表
+      // If viewing detail and deleted entry is the currently viewed entry, return to list
       if (viewMode === 'detail' && viewingEntry && viewingEntry.id === selectedEntry.id) {
         setViewMode('list');
         setViewingEntry(null);
       }
-      // 重新加载数据
+      // Reload data
       if (selectedDate) {
         await loadEntriesByDate(selectedDate);
       }
       await loadEntries();
     } catch (err) {
-      console.error('删除日记失败:', err);
-      setError('删除日记失败，请重试');
+      console.error('Failed to delete journal entry:', err);
+      setError('Failed to delete journal entry, please try again');
     }
   };
 
@@ -161,14 +161,14 @@ function Journal() {
     setIsCreateModalOpen(false);
     setIsEditModalOpen(false);
     setSelectedEntry(null);
-    // 重新加载数据
+    // Reload data
     if (selectedDate) {
       loadEntriesByDate(selectedDate);
     }
     loadEntries();
-    // 如果正在查看详情，刷新详情数据
+    // If viewing detail, refresh detail data
     if (viewMode === 'detail' && viewingEntry) {
-      // 重新加载该条目
+      // Reload the entry
       getJournalEntriesByDate(selectedDate).then(data => {
         const updatedEntry = data.find(e => e.id === viewingEntry.id);
         if (updatedEntry) {
@@ -200,7 +200,7 @@ function Journal() {
     setSelectedDate(getTodayLocalDateString());
   };
 
-  // 解析图片URLs（JSON格式）
+  // Parse image URLs (JSON format)
   const parseImageUrls = (imageUrls) => {
     if (!imageUrls) return [];
     try {
@@ -210,14 +210,14 @@ function Journal() {
     }
   };
 
-  // 检查某天是否有日记（排除自动创建的统计记录）
+  // Check if there are journal entries on a specific date (excluding auto-created statistics records)
   const hasEntriesOnDate = (date) => {
     return allEntries.some((entry) => 
       entry.date === date && !isAutoCreatedStatsEntry(entry)
     );
   };
 
-  // 检查是否是自动创建的统计记录（只有totalFocusMinutes，没有其他内容）
+  // Check if it's an auto-created statistics record (only totalFocusMinutes, no other content)
   const isAutoCreatedStatsEntry = (entry) => {
     return !entry.title && 
            !entry.contentText && 
@@ -230,11 +230,11 @@ function Journal() {
            (entry.totalFocusMinutes > 0);
   };
 
-  // 获取有日记的日期列表（排除自动创建的统计记录）
+  // Get list of dates with journal entries (excluding auto-created statistics records)
   const getDatesWithEntries = () => {
     const dates = new Set();
     allEntries.forEach((entry) => {
-      // 只包含有实际内容的日记，排除自动创建的统计记录
+      // Only include journal entries with actual content, exclude auto-created statistics records
       if (!isAutoCreatedStatsEntry(entry)) {
         dates.add(entry.date);
       }
@@ -246,7 +246,7 @@ function Journal() {
     return (
       <div className="page-content">
         <div className="journal-container">
-          <div className="loading">加载中...</div>
+          <div className="loading">Loading...</div>
         </div>
       </div>
     );
@@ -257,19 +257,19 @@ function Journal() {
       <div className="journal-container">
         <div className="journal-header">
           <div>
-            <h1>日记</h1>
-            <div className="timezone-info" title="当前时区">
-              时区: {getCurrentTimezone()}
+            <h1>Journal</h1>
+            <div className="timezone-info" title="Current timezone">
+              Timezone: {getCurrentTimezone()}
             </div>
           </div>
           <button className="btn-create" onClick={handleCreateClick}>
-            + 新建日记
+            + New Entry
           </button>
         </div>
 
         {error && <div className="error-message">{error}</div>}
 
-        {/* 日期选择器 */}
+        {/* Date selector */}
         <div className="date-selector">
           <button className="btn-nav" onClick={handlePreviousDay}>
             ←
@@ -280,10 +280,11 @@ function Journal() {
               value={selectedDate}
               onChange={handleDateChange}
               className="date-input"
+              lang="en"
             />
             <span className="date-text">{formatLocalDateDisplay(selectedDate)}</span>
             <button className="btn-today" onClick={handleToday}>
-              今天
+              Today
             </button>
           </div>
           <button className="btn-nav" onClick={handleNextDay}>
@@ -291,26 +292,26 @@ function Journal() {
           </button>
         </div>
 
-        {/* 根据视图模式显示不同内容 */}
+        {/* Display different content based on view mode */}
         {viewMode === 'list' ? (
-          /* 列表视图：显示该天的所有journal */
+          /* List view: show all journals for that day */
           <div className="journal-list-view">
             <div className="list-header">
-              <h2>{formatLocalDateDisplay(selectedDate)} 的日记</h2>
-              <span className="entry-count">共 {entries.length} 篇</span>
+              <h2>Journal for {formatLocalDateDisplay(selectedDate)}</h2>
+              <span className="entry-count">{entries.length} entries</span>
             </div>
             
             {entries.length === 0 ? (
               <div className="empty-state">
-                <p>这一天还没有日记</p>
+                <p>No journal entries for this day yet</p>
                 <button className="btn-create-small" onClick={handleCreateClick}>
-                  创建第一篇日记
+                  Create First Entry
                 </button>
               </div>
             ) : (
               <div className="journal-list">
                 {entries.map((entry) => {
-                  // 调试：打印entry数据
+                  // Debug: print entry data
                   console.log('Journal Entry:', entry);
                   
                   const preview = entry.contentText 
@@ -321,7 +322,7 @@ function Journal() {
                         ? (entry.evaluation.length > 100 
                             ? entry.evaluation.substring(0, 100) + '...' 
                             : entry.evaluation)
-                        : '暂无内容');
+                        : 'No content');
                   
                   return (
                     <div 
@@ -331,14 +332,14 @@ function Journal() {
                     >
                       <div className="list-item-header">
                         <div className="list-item-title">
-                          {entry.title || '无标题'}
+                          {entry.title || 'No Title'}
                         </div>
                         <div className="list-item-time">
                           {formatLocalTime(entry.createdAt)}
                         </div>
                       </div>
                       
-                      {/* 标签预览 */}
+                      {/* Tag preview */}
                       {(entry.weather || entry.mood || entry.activity) && (
                         <div className="list-item-tags">
                           {entry.weather && (
@@ -353,18 +354,18 @@ function Journal() {
                         </div>
                       )}
                       
-                      {/* 内容预览 */}
+                      {/* Content preview */}
                       <div className="list-item-preview">
                         {preview}
                       </div>
                       
-                      {/* 图标提示 */}
+                      {/* Icon hints */}
                       <div className="list-item-icons">
                         {entry.imageUrls && parseImageUrls(entry.imageUrls).length > 0 && (
-                          <span className="icon-hint" title="包含图片">📷</span>
+                          <span className="icon-hint" title="Contains images">📷</span>
                         )}
                         {entry.voiceNoteUrl && (
-                          <span className="icon-hint" title="包含语音">🎤</span>
+                          <span className="icon-hint" title="Contains voice">🎤</span>
                         )}
                       </div>
                     </div>
@@ -374,15 +375,15 @@ function Journal() {
             )}
           </div>
         ) : (
-          /* 详情视图：显示单个journal的完整内容 */
+          /* Detail view: show full content of a single journal */
           viewingEntry && (
             <div className="journal-detail-view">
               <div className="detail-header">
                 <button className="btn-back" onClick={handleBackToList}>
-                  ← 返回列表
+                  ← Back to List
                 </button>
                 <div className="detail-title-section">
-                  <h2>{viewingEntry.title || '无标题'}</h2>
+                  <h2>{viewingEntry.title || 'No Title'}</h2>
                   <div className="detail-meta">
                     <span className="detail-date">{formatLocalDateDisplay(viewingEntry.date)}</span>
                     <span className="detail-time">{formatLocalTime(viewingEntry.createdAt)}</span>
@@ -392,88 +393,88 @@ function Journal() {
                   <button
                     className="btn-edit"
                     onClick={() => handleEditClick(viewingEntry)}
-                    title="编辑"
+                    title="Edit"
                   >
-                    编辑
+                    Edit
                   </button>
                   <button
                     className="btn-delete"
                     onClick={() => handleDeleteClick(viewingEntry)}
-                    title="删除"
+                    title="Delete"
                   >
-                    删除
+                    Delete
                   </button>
                 </div>
               </div>
 
-              {/* 分类标签 */}
+              {/* Category tags */}
               {(viewingEntry.weather || viewingEntry.mood || viewingEntry.activity) && (
                 <div className="entry-tags">
                   {viewingEntry.weather && (
-                    <span className="tag tag-weather">天气: {viewingEntry.weather}</span>
+                    <span className="tag tag-weather">Weather: {viewingEntry.weather}</span>
                   )}
                   {viewingEntry.mood && (
-                    <span className="tag tag-mood">心情: {viewingEntry.mood}</span>
+                    <span className="tag tag-mood">Mood: {viewingEntry.mood}</span>
                   )}
                   {viewingEntry.activity && (
-                    <span className="tag tag-activity">活动: {viewingEntry.activity}</span>
+                    <span className="tag tag-activity">Activity: {viewingEntry.activity}</span>
                   )}
                 </div>
               )}
 
-              {/* 文本内容 */}
+              {/* Text content */}
               {viewingEntry.contentText && (
                 <div className="entry-content">
                   <p>{viewingEntry.contentText}</p>
                 </div>
               )}
 
-              {/* 图片 */}
+              {/* Images */}
               {viewingEntry.imageUrls && parseImageUrls(viewingEntry.imageUrls).length > 0 && (
                 <div className="entry-images">
                   {parseImageUrls(viewingEntry.imageUrls).map((url, index) => (
                     <img
                       key={index}
                       src={url}
-                      alt={`日记图片 ${index + 1}`}
+                      alt={`Journal image ${index + 1}`}
                       className="entry-image"
                     />
                   ))}
                 </div>
               )}
 
-              {/* 语音 */}
+              {/* Voice */}
               {viewingEntry.voiceNoteUrl && (
                 <div className="entry-voice">
                   <audio controls src={viewingEntry.voiceNoteUrl}>
-                    您的浏览器不支持音频播放
+                    Your browser does not support audio playback
                   </audio>
                 </div>
               )}
 
-              {/* 评价（向后兼容） */}
+              {/* Evaluation (backward compatibility) */}
               {viewingEntry.evaluation && (
                 <div className="entry-evaluation">
-                  <p className="evaluation-label">评价：</p>
+                  <p className="evaluation-label">Evaluation:</p>
                   <p>{viewingEntry.evaluation}</p>
                 </div>
               )}
 
-              {/* 如果没有任何内容，显示提示 */}
+              {/* If no content, show hint */}
               {!viewingEntry.contentText && !viewingEntry.evaluation && 
                !viewingEntry.imageUrls && !viewingEntry.voiceNoteUrl && (
                 <div className="entry-empty-content">
-                  <p className="empty-content-hint">这篇日记还没有内容，点击"编辑"添加内容</p>
+                  <p className="empty-content-hint">This journal entry has no content yet, click "Edit" to add content</p>
                 </div>
               )}
             </div>
           )
         )}
 
-        {/* 有日记的日期列表（侧边栏或底部） */}
+        {/* List of dates with journal entries (sidebar or bottom) */}
         {allEntries.length > 0 && (
           <div className="dates-with-entries">
-            <h3>有日记的日期</h3>
+            <h3>Dates with Entries</h3>
             <div className="dates-list">
                   {getDatesWithEntries().slice(0, 10).map((date) => (
                 <button
@@ -489,7 +490,7 @@ function Journal() {
         )}
       </div>
 
-      {/* 创建/编辑模态框 */}
+      {/* Create/Edit modal */}
       <CreateJournalModal
         isOpen={isCreateModalOpen || isEditModalOpen}
         onClose={() => {
@@ -502,7 +503,7 @@ function Journal() {
         defaultDate={selectedDate}
       />
 
-      {/* 删除确认模态框 */}
+      {/* Delete confirmation modal */}
       <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
@@ -510,8 +511,8 @@ function Journal() {
           setSelectedEntry(null);
         }}
         onConfirm={handleDeleteConfirm}
-        title="确认删除"
-        message={`确定要删除这篇日记"${selectedEntry?.title || '无标题'}"吗？此操作无法撤销。`}
+        title="Confirm Delete"
+        message={`Are you sure you want to delete this journal entry "${selectedEntry?.title || 'No Title'}"? This action cannot be undone.`}
       />
     </div>
   );

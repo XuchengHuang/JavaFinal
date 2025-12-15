@@ -13,25 +13,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * JWT Token 工具类
- * 用于生成和验证 JWT token
+ * JWT Token utility class
+ * Used for generating and validating JWT tokens
  */
 @Component
 public class JwtUtil {
 
-    // JWT 密钥（从配置文件读取，生产环境必须通过环境变量设置）
     @Value("${jwt.secret}")
     private String secretKey;
     
-    // Token 过期时间（从配置文件读取，默认7天）
     @Value("${jwt.expiration:604800000}")
     private long expirationTime;
 
     /**
-     * 生成 JWT token
+     * Generate JWT token
      *
-     * @param userId 用户ID
-     * @return JWT token 字符串
+     * @param userId User ID
+     * @return JWT token string
      */
     public String generateToken(Long userId) {
         Map<String, Object> claims = new HashMap<>();
@@ -52,10 +50,10 @@ public class JwtUtil {
     }
 
     /**
-     * 从 token 中提取用户ID
+     * Extract user ID from token
      *
      * @param token JWT token
-     * @return 用户ID，如果 token 无效则返回 null
+     * @return User ID, or null if token is invalid
      */
     public Long getUserIdFromToken(String token) {
         try {
@@ -75,16 +73,15 @@ public class JwtUtil {
                 return Long.parseLong(String.valueOf(userIdObj));
             }
         } catch (Exception e) {
-            // Token 无效、过期或格式错误
             return null;
         }
     }
 
     /**
-     * 验证 token 是否有效
+     * Validate if token is valid
      *
      * @param token JWT token
-     * @return true 如果 token 有效，false 否则
+     * @return true if token is valid, false otherwise
      */
     public boolean validateToken(String token) {
         try {

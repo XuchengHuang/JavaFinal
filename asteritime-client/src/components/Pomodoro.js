@@ -3,18 +3,18 @@ import { getFocusTime, addFocusMinutes } from '../api/journal';
 import './Pomodoro.css';
 
 function Pomodoro() {
-  const [inputMinutes, setInputMinutes] = useState(25); // 用户输入的分钟数
-  const [totalSeconds, setTotalSeconds] = useState(25 * 60); // 总秒数（25分钟 = 1500秒）
+  const [inputMinutes, setInputMinutes] = useState(25); // User input minutes
+  const [totalSeconds, setTotalSeconds] = useState(25 * 60); // Total seconds (25 minutes = 1500 seconds)
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [totalFocusMinutes, setTotalFocusMinutes] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [initialMinutes, setInitialMinutes] = useState(25); // 记录开始时的分钟数
+  const [initialMinutes, setInitialMinutes] = useState(25); // Record minutes at start
   const intervalRef = useRef(null);
-  const savedRef = useRef(false); // 防止重复保存
-  const wasManuallyResetRef = useRef(false); // 标记是否是手动重置
+  const savedRef = useRef(false); // Prevent duplicate saves
+  const wasManuallyResetRef = useRef(false); // Mark if manually reset
 
-  // 获取今天的日期字符串（YYYY-MM-DD格式）
+  // Get today's date string (YYYY-MM-DD format)
   const getTodayDateString = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -23,23 +23,23 @@ function Pomodoro() {
     return `${year}-${month}-${day}`;
   };
 
-  // 加载今天的累计专注时间
+  // Load today's accumulated focus time
   const loadTodayFocusTime = useCallback(async () => {
     try {
       const today = getTodayDateString();
       const focusTime = await getFocusTime(today);
       setTotalFocusMinutes(focusTime || 0);
     } catch (error) {
-      console.error('加载今日专注时间失败:', error);
+      console.error('Failed to load today\'s focus time:', error);
     }
   }, []);
 
-  // 组件挂载时加载累计时间
+  // Load accumulated time when component mounts
   useEffect(() => {
     loadTodayFocusTime();
   }, [loadTodayFocusTime]);
 
-  // 倒计时逻辑 - 使用总秒数来管理，避免状态更新问题
+  // Countdown logic - use total seconds to manage, avoid state update issues
   useEffect(() => {
     if (isRunning && !isPaused) {
       intervalRef.current = setInterval(() => {
@@ -47,12 +47,12 @@ function Pomodoro() {
           if (prevTotalSeconds > 0) {
             return prevTotalSeconds - 1;
           } else {
-            // 倒计时自然结束（不是手动重置）
-            // 只有在不是手动重置的情况下才标记为完成
+            // Countdown naturally ends (not manually reset)
+            // Only mark as completed if not manually reset
             if (!wasManuallyResetRef.current) {
               setIsRunning(false);
               setIsPaused(false);
-              setIsCompleted(true); // 只有自然完成时才设置为 true
+              setIsCompleted(true); // Only set to true when naturally completed
             }
             return 0;
           }
@@ -72,95 +72,95 @@ function Pomodoro() {
     };
   }, [isRunning, isPaused]);
 
-  // 当倒计时自然完成时，保存专注时间（只有自然完成才保存，手动重置不保存）
+  // When countdown naturally completes, save focus time (only natural completion saves, manual reset does not save)
   useEffect(() => {
-    // 确保是自然完成（不是手动重置），且有初始分钟数，且未保存过
+    // Ensure it's natural completion (not manually reset), has initial minutes, and hasn't been saved
     if (isCompleted && initialMinutes > 0 && !savedRef.current && !wasManuallyResetRef.current) {
       savedRef.current = true;
       const saveFocusTime = async () => {
         try {
           const today = getTodayDateString();
-          console.log('倒计时自然完成，保存专注时间:', { date: today, minutes: initialMinutes });
+          console.log('Countdown naturally completed, saving focus time:', { date: today, minutes: initialMinutes });
           const result = await addFocusMinutes(today, initialMinutes);
-          console.log('保存成功:', result);
-          // 重新加载累计时间
+          console.log('Save successful:', result);
+          // Reload accumulated time
           await loadTodayFocusTime();
           
-          // 播放提示音（可选）
-          alert(`番茄钟完成！本次专注 ${initialMinutes} 分钟`);
+          // Play notification sound (optional)
+          alert(`Pomodoro completed! Focused for ${initialMinutes} minutes`);
         } catch (error) {
-          console.error('保存专注时间失败:', error);
-          console.error('错误详情:', error.message, error.stack);
-          alert(`保存专注时间失败: ${error.message || '请稍后重试'}`);
-          savedRef.current = false; // 保存失败，允许重试
+          console.error('Failed to save focus time:', error);
+          console.error('Error details:', error.message, error.stack);
+          alert(`Failed to save focus time: ${error.message || 'Please try again later'}`);
+          savedRef.current = false; // Save failed, allow retry
         }
       };
       saveFocusTime();
     }
   }, [isCompleted, initialMinutes, loadTodayFocusTime]);
 
-  // 开始倒计时
+  // Start countdown
   const handleStart = () => {
     const mins = inputMinutes;
     if (mins < 1 || mins > 120) {
-      alert('请输入1-120之间的分钟数');
+      alert('Please enter minutes between 1-120');
       return;
     }
-    const totalSecs = mins * 60; // 转换为秒数
+    const totalSecs = mins * 60; // Convert to seconds
     setTotalSeconds(totalSecs);
-    setInitialMinutes(mins); // 记录开始时的分钟数
+    setInitialMinutes(mins); // Record minutes at start
     setIsRunning(true);
     setIsPaused(false);
     setIsCompleted(false);
-    savedRef.current = false; // 重置保存标志
-    wasManuallyResetRef.current = false; // 重置手动重置标志
+    savedRef.current = false; // Reset save flag
+    wasManuallyResetRef.current = false; // Reset manual reset flag
   };
 
-  // 暂停/继续
+  // Pause/Resume
   const handlePause = () => {
     if (isRunning) {
       setIsPaused(!isPaused);
     }
   };
 
-  // 重置（手动重置，不保存时间）
+  // Reset (manual reset, does not save time)
   const handleReset = () => {
-    wasManuallyResetRef.current = true; // 标记为手动重置
+    wasManuallyResetRef.current = true; // Mark as manual reset
     setIsRunning(false);
     setIsPaused(false);
-    setIsCompleted(false); // 确保不会触发保存
-    const totalSecs = inputMinutes * 60; // 转换为秒数
+    setIsCompleted(false); // Ensure it won't trigger save
+    const totalSecs = inputMinutes * 60; // Convert to seconds
     setTotalSeconds(totalSecs);
-    setInitialMinutes(0); // 设置为0，确保即使isCompleted为true也不会保存
-    savedRef.current = false; // 重置保存标志
+    setInitialMinutes(0); // Set to 0, ensure even if isCompleted is true it won't save
+    savedRef.current = false; // Reset save flag
     
-    // 延迟重置手动重置标志，确保倒计时结束的检查已经完成
+    // Delay reset manual reset flag, ensure countdown end check has completed
     setTimeout(() => {
       wasManuallyResetRef.current = false;
     }, 100);
   };
 
-  // 格式化时间显示（MM:SS）
+  // Format time display (MM:SS)
   const formatTime = (totalSecs) => {
     const mins = Math.floor(totalSecs / 60);
     const secs = totalSecs % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  // 格式化累计时间显示
+  // Format accumulated time display
   const formatTotalTime = (totalMinutes) => {
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
     if (hours > 0) {
-      return `${hours}小时${mins}分钟`;
+      return `${hours}h ${mins}min`;
     }
-    return `${mins}分钟`;
+    return `${mins}min`;
   };
 
   return (
     <div className="pomodoro-container">
       <div className="pomodoro-content">
-        {/* 闹钟图标 */}
+        {/* Clock icon */}
         <div className="pomodoro-icon">
           <svg
             width="120"
@@ -176,9 +176,9 @@ function Pomodoro() {
           </svg>
         </div>
 
-        {/* 倒计时设置 */}
+        {/* Countdown settings */}
         <div className="timer-settings">
-          <label htmlFor="timer-minutes">设置时间（分钟）：</label>
+          <label htmlFor="timer-minutes">Set Time (minutes):</label>
           <input
             id="timer-minutes"
             type="number"
@@ -189,7 +189,7 @@ function Pomodoro() {
               const value = parseInt(e.target.value) || 25;
               setInputMinutes(value);
               if (!isRunning) {
-                const totalSecs = value * 60; // 转换为秒数
+                const totalSecs = value * 60; // Convert to seconds
                 setTotalSeconds(totalSecs);
               }
             }}
@@ -198,34 +198,34 @@ function Pomodoro() {
           />
         </div>
 
-        {/* 倒计时显示 */}
+        {/* Countdown display */}
         <div className="timer-display">
           <div className={`timer-time ${isCompleted ? 'completed' : ''}`}>
             {formatTime(totalSeconds)}
           </div>
         </div>
 
-        {/* 控制按钮 */}
+        {/* Control buttons */}
         <div className="timer-controls">
           {!isRunning ? (
             <button className="timer-btn start-btn" onClick={handleStart}>
-              开始
+              Start
             </button>
           ) : (
             <>
               <button className="timer-btn pause-btn" onClick={handlePause}>
-                {isPaused ? '继续' : '暂停'}
+                {isPaused ? 'Resume' : 'Pause'}
               </button>
               <button className="timer-btn reset-btn" onClick={handleReset}>
-                重置
+                Reset
               </button>
             </>
           )}
         </div>
 
-        {/* 累计专注时间显示 */}
+        {/* Accumulated focus time display */}
         <div className="total-focus-time">
-          <div className="total-focus-label">今日累计专注时间</div>
+          <div className="total-focus-label">Today's Total Focus Time</div>
           <div className="total-focus-value">{formatTotalTime(totalFocusMinutes)}</div>
         </div>
       </div>

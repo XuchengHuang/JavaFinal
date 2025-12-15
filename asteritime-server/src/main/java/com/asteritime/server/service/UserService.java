@@ -16,12 +16,11 @@ public class UserService {
     private UserRepository userRepository;
 
     /**
-     * 注册新用户：
-     *   - 要求邮箱唯一
-     *   - 简单示例：暂不做密码加密，直接保存原文密码（实际项目建议加密）
+     * Register new user:
+     *   - Email must be unique
+     *   - Simple example: password is stored in plain text (encryption recommended for production)
      */
     public Optional<User> register(String username, String email, String password) {
-        // 邮箱已存在则注册失败
         if (userRepository.findByEmail(email).isPresent()) {
             return Optional.empty();
         }
@@ -35,8 +34,8 @@ public class UserService {
     }
 
     /**
-     * 登录校验：根据邮箱和密码查找用户。
-     * 成功返回 User，失败返回 Optional.empty。
+     * Login validation: Find user by email and password.
+     * Returns User on success, Optional.empty on failure.
      */
     public Optional<User> login(String email, String password) {
         return userRepository.findByEmailAndPassword(email, password);

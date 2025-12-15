@@ -11,17 +11,17 @@ import java.util.Optional;
 public interface TaskRecurrenceRuleRepository extends JpaRepository<TaskRecurrenceRule, Long> {
     
     /**
-     * 查询指定用户的所有重复规则
+     * Find all recurrence rules for a specific user
      */
     List<TaskRecurrenceRule> findByUser_Id(Long userId);
     
     /**
-     * 查询指定用户的指定重复规则（用于检查重复）
+     * Find specific recurrence rule for a specific user (for duplicate checking)
      */
     Optional<TaskRecurrenceRule> findByUser_IdAndFrequencyExpression(Long userId, String frequencyExpression);
     
     /**
-     * 查询指定用户的指定重复规则（按ID）
+     * Find specific recurrence rule for a specific user (by ID)
      */
     Optional<TaskRecurrenceRule> findByIdAndUser_Id(Long id, Long userId);
 }

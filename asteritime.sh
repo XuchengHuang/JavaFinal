@@ -1,53 +1,53 @@
 #!/bin/bash
 
 ###############################################################################
-# AsteriTime 统一管理脚本
+# AsteriTime Unified Management Script
 # 
-# 功能：
-#   - 环境配置检查与设置
-#   - 项目编译
-#   - 本地开发运行
-#   - 调试与日志查看
+# Features:
+#   - Environment configuration check and setup
+#   - Project compilation
+#   - Local development server
+#   - Debugging and log viewing
 #
-# 使用方法：
+# Usage:
 #   ./asteritime.sh [command] [options]
 #
-# 命令列表：
-#   setup       - 初始环境配置（检查 Java、Maven、MySQL 等）
-#   build       - 编译项目
-#   backend     - 启动后端服务器（单独启动）
-#   frontend    - 启动前端服务器（单独启动）
-#   dev         - 启动开发服务器（后端 + 前端，后台运行）
-#   stop        - 停止所有开发服务器
-#   stop:backend - 停止后端服务器
-#   stop:frontend - 停止前端服务器
-#   logs        - 查看后端日志（添加 -f 实时跟踪）
-#   logs frontend - 查看前端日志（添加 -f 实时跟踪）
-#   clean       - 清理编译产物和日志
-#   help        - 显示帮助信息
+# Commands:
+#   setup       - Initial environment setup (check Java, Maven, MySQL, etc.)
+#   build       - Build project
+#   backend     - Start backend server (standalone)
+#   frontend    - Start frontend server (standalone)
+#   dev         - Start development servers (backend + frontend, background)
+#   stop        - Stop all development servers
+#   stop:backend - Stop backend server
+#   stop:frontend - Stop frontend server
+#   logs        - View backend logs (add -f for real-time tracking)
+#   logs frontend - View frontend logs (add -f for real-time tracking)
+#   clean       - Clean build artifacts and logs
+#   help        - Show help information
 ###############################################################################
 
 set -e
 
-# 颜色定义
+# Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# 项目根目录
+# Project root directory
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_DIR="$PROJECT_ROOT/asteritime-server"
 CLIENT_DIR="$PROJECT_ROOT/asteritime-client"
 
-# 日志文件
+# Log files
 SERVER_LOG="$PROJECT_ROOT/server.log"
 SERVER_PID="$PROJECT_ROOT/server.pid"
 CLIENT_LOG="$PROJECT_ROOT/client.log"
 CLIENT_PID="$PROJECT_ROOT/client.pid"
 
-# 检测操作系统
+# Detect operating system
 detect_os() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "macos"
@@ -58,12 +58,12 @@ detect_os() {
     fi
 }
 
-# 设置 Java 21 环境
+# Setup Java 21 environment
 setup_java() {
     local os=$(detect_os)
     
     if [ "$os" == "macos" ]; then
-        # macOS: 尝试使用 Homebrew 安装的 Java 21
+        # macOS: Try to use Homebrew installed Java 21
         if [ -d "/opt/homebrew/Cellar/openjdk@21" ]; then
             local java_path=$(find /opt/homebrew/Cellar/openjdk@21 -name "openjdk.jdk" -type d | head -1)
             if [ -n "$java_path" ]; then
@@ -72,7 +72,7 @@ setup_java() {
                 return 0
             fi
         fi
-        # 尝试使用 /usr/libexec/java_home
+        # Try to use /usr/libexec/java_home
         if command -v /usr/libexec/java_home &> /dev/null; then
             local java_home=$(/usr/libexec/java_home -v 21 2>/dev/null)
             if [ -n "$java_home" ]; then
@@ -82,7 +82,7 @@ setup_java() {
             fi
         fi
     elif [ "$os" == "linux" ]; then
-        # Linux: 尝试常见的 Java 21 路径
+        # Linux: Try common Java 21 paths
         local possible_paths=(
             "/usr/lib/jvm/java-21-openjdk"
             "/usr/lib/jvm/java-21"
@@ -97,11 +97,11 @@ setup_java() {
         done
     fi
     
-    # 如果找不到，检查系统默认 Java 版本
+    # If not found, check system default Java version
     if command -v java &> /dev/null; then
         local java_version=$(java -version 2>&1 | head -1 | grep -oP 'version "?(1\.)?\K\d+' || echo "0")
         if [ "$java_version" -ge 21 ]; then
-            echo -e "${GREEN}使用系统默认 Java (版本 $java_version)${NC}"
+            echo -e "${GREEN}Using system default Java (version $java_version)${NC}"
             return 0
         fi
     fi
@@ -109,35 +109,35 @@ setup_java() {
     return 1
 }
 
-# 加载环境变量
+# Load environment variables
 load_env() {
     if [ -f "$PROJECT_ROOT/.env" ]; then
-        echo -e "${BLUE}加载环境变量: .env${NC}"
+        echo -e "${BLUE}Loading environment variables: .env${NC}"
         set -a
         source "$PROJECT_ROOT/.env"
         set +a
         return 0
     elif [ -f "$PROJECT_ROOT/.env.example" ]; then
-        echo -e "${YELLOW}警告: .env 文件不存在，自动从 .env.example 创建${NC}"
+        echo -e "${YELLOW}Warning: .env file does not exist, creating from .env.example${NC}"
         cp "$PROJECT_ROOT/.env.example" "$PROJECT_ROOT/.env"
-        echo -e "${GREEN}已创建 .env 文件${NC}"
-        echo -e "${YELLOW}提示: 请编辑 .env 文件设置数据库密码等配置${NC}"
-        # 加载刚创建的文件
+        echo -e "${GREEN}.env file created${NC}"
+        echo -e "${YELLOW}Tip: Please edit .env file to set database password and other configurations${NC}"
+        # Load the newly created file
         set -a
         source "$PROJECT_ROOT/.env"
         set +a
         return 0
     else
-        echo -e "${YELLOW}警告: 未找到环境变量配置文件${NC}"
+        echo -e "${YELLOW}Warning: Environment variable configuration file not found${NC}"
         return 1
     fi
 }
 
-# 检查依赖
+# Check dependencies
 check_dependencies() {
     local missing=()
     
-    # 检查 Java
+    # Check Java
     if ! setup_java; then
         missing+=("Java 21")
     else
@@ -145,7 +145,7 @@ check_dependencies() {
         echo -e "${GREEN}✓ Java: $java_version${NC}"
     fi
     
-    # 检查 Maven
+    # Check Maven
     if ! command -v mvn &> /dev/null; then
         missing+=("Maven")
     else
@@ -153,19 +153,19 @@ check_dependencies() {
         echo -e "${GREEN}✓ Maven: $mvn_version${NC}"
     fi
     
-    # 检查 MySQL 客户端
+    # Check MySQL client
     if command -v mysql &> /dev/null || command -v mysqladmin &> /dev/null; then
-        echo -e "${GREEN}✓ MySQL 客户端已安装${NC}"
+        echo -e "${GREEN}✓ MySQL client installed${NC}"
     else
-        echo -e "${YELLOW}⚠ MySQL 客户端未安装${NC}"
+        echo -e "${YELLOW}⚠ MySQL client not installed${NC}"
     fi
     
-    # 检查 Node.js 和 npm（前端需要）
+    # Check Node.js and npm (required for frontend)
     if command -v node &> /dev/null; then
         local node_version=$(node --version)
         echo -e "${GREEN}✓ Node.js: $node_version${NC}"
     else
-        echo -e "${YELLOW}⚠ Node.js 未安装（前端需要）${NC}"
+        echo -e "${YELLOW}⚠ Node.js not installed (required for frontend)${NC}"
         missing+=("Node.js")
     fi
     
@@ -173,189 +173,189 @@ check_dependencies() {
         local npm_version=$(npm --version)
         echo -e "${GREEN}✓ npm: $npm_version${NC}"
     else
-        echo -e "${YELLOW}⚠ npm 未安装（前端需要）${NC}"
+        echo -e "${YELLOW}⚠ npm not installed (required for frontend)${NC}"
         missing+=("npm")
     fi
     
     
     if [ ${#missing[@]} -gt 0 ]; then
-        echo -e "${RED}缺少以下依赖: ${missing[*]}${NC}"
+        echo -e "${RED}Missing dependencies: ${missing[*]}${NC}"
         return 1
     fi
     
     return 0
 }
 
-# 检查 MySQL 连接和数据库
+# Check MySQL connection and database
 check_mysql() {
     local db_user=${DB_USERNAME:-root}
     local db_pass=${DB_PASSWORD:-}
     
     if [ -z "$db_pass" ]; then
-        echo -e "${YELLOW}提示: DB_PASSWORD 未设置，跳过 MySQL 连接检查${NC}"
+        echo -e "${YELLOW}Tip: DB_PASSWORD not set, skipping MySQL connection check${NC}"
         return 0
     fi
     
     if ! command -v mysqladmin &> /dev/null && ! command -v mysql &> /dev/null; then
-        echo -e "${YELLOW}⚠ MySQL 客户端未安装，跳过数据库检查${NC}"
+        echo -e "${YELLOW}⚠ MySQL client not installed, skipping database check${NC}"
         return 0
     fi
     
-    # 检查 MySQL 服务是否运行
+    # Check if MySQL service is running
     if command -v mysqladmin &> /dev/null; then
         if ! mysqladmin ping -h localhost -u "$db_user" -p"$db_pass" --silent 2>/dev/null; then
-            echo -e "${YELLOW}⚠ MySQL 服务未运行或连接失败${NC}"
-            echo -e "${YELLOW}提示: 请确保 MySQL 服务已启动${NC}"
+            echo -e "${YELLOW}⚠ MySQL service not running or connection failed${NC}"
+            echo -e "${YELLOW}Tip: Please ensure MySQL service is started${NC}"
             return 1
         fi
-        echo -e "${GREEN}✓ MySQL 服务运行正常${NC}"
+        echo -e "${GREEN}✓ MySQL service running normally${NC}"
     fi
     
-    # 检查数据库是否存在
+    # Check if database exists
     if command -v mysql &> /dev/null; then
         local db_exists=$(mysql -h localhost -u "$db_user" -p"$db_pass" -e "SHOW DATABASES LIKE 'asteritime';" 2>/dev/null | grep -c asteritime || echo "0")
         if [ "$db_exists" -eq 0 ]; then
-            echo -e "${YELLOW}⚠ 数据库 'asteritime' 不存在${NC}"
-            echo -e "${YELLOW}提示: 运行以下命令创建数据库:${NC}"
+            echo -e "${YELLOW}⚠ Database 'asteritime' does not exist${NC}"
+            echo -e "${YELLOW}Tip: Run the following command to create database:${NC}"
             echo -e "  mysql -u $db_user -p -e \"CREATE DATABASE asteritime CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\""
             return 1
         else
-            echo -e "${GREEN}✓ 数据库 'asteritime' 已存在${NC}"
+            echo -e "${GREEN}✓ Database 'asteritime' exists${NC}"
         fi
     fi
     
     return 0
 }
 
-# 初始环境配置
+# Initial environment setup
 cmd_setup() {
     echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}AsteriTime 环境配置检查${NC}"
+    echo -e "${BLUE}AsteriTime Environment Configuration Check${NC}"
     echo -e "${BLUE}========================================${NC}"
     echo ""
     
-    # 设置 Java
+    # Setup Java
     if ! setup_java; then
-        echo -e "${RED}错误: 未找到 Java 21${NC}"
-        echo -e "${YELLOW}请安装 Java 21:${NC}"
+        echo -e "${RED}Error: Java 21 not found${NC}"
+        echo -e "${YELLOW}Please install Java 21:${NC}"
         echo -e "  macOS: brew install openjdk@21"
         echo -e "  Linux: sudo apt-get install openjdk-21-jdk"
         exit 1
     fi
     
-    echo -e "${GREEN}Java 环境已配置${NC}"
+    echo -e "${GREEN}Java environment configured${NC}"
     echo -e "  JAVA_HOME: $JAVA_HOME"
-    echo -e "  Java 版本: $(java -version 2>&1 | head -1)"
+    echo -e "  Java version: $(java -version 2>&1 | head -1)"
     echo ""
     
-    # 检查依赖
-    echo -e "${BLUE}检查依赖...${NC}"
+    # Check dependencies
+    echo -e "${BLUE}Checking dependencies...${NC}"
     if ! check_dependencies; then
-        echo -e "${RED}请安装缺失的依赖后重试${NC}"
+        echo -e "${RED}Please install missing dependencies and try again${NC}"
         exit 1
     fi
     echo ""
     
-    # 加载环境变量
-    echo -e "${BLUE}配置环境变量...${NC}"
+    # Load environment variables
+    echo -e "${BLUE}Configuring environment variables...${NC}"
     if ! load_env; then
-        echo -e "${YELLOW}环境变量配置不完整，但可以继续${NC}"
+        echo -e "${YELLOW}Environment variable configuration incomplete, but can continue${NC}"
     fi
     echo ""
     
-    # 检查 MySQL
-    echo -e "${BLUE}检查数据库连接...${NC}"
+    # Check MySQL
+    echo -e "${BLUE}Checking database connection...${NC}"
     check_mysql
     echo ""
     
     echo -e "${GREEN}========================================${NC}"
-    echo -e "${GREEN}环境配置完成！${NC}"
+    echo -e "${GREEN}Environment setup completed!${NC}"
     echo -e "${GREEN}========================================${NC}"
 }
 
-# 编译项目
+# Build project
 cmd_build() {
     echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}编译 AsteriTime 项目${NC}"
+    echo -e "${BLUE}Building AsteriTime Project${NC}"
     echo -e "${BLUE}========================================${NC}"
     
     if ! setup_java; then
-        echo -e "${RED}错误: 未找到 Java 21${NC}"
+        echo -e "${RED}Error: Java 21 not found${NC}"
         exit 1
     fi
     
     load_env
     
     cd "$PROJECT_ROOT"
-    echo -e "${YELLOW}Java 版本: $(java -version 2>&1 | head -1)${NC}"
-    echo -e "${YELLOW}Maven 版本: $(mvn -version | head -1)${NC}"
+    echo -e "${YELLOW}Java version: $(java -version 2>&1 | head -1)${NC}"
+    echo -e "${YELLOW}Maven version: $(mvn -version | head -1)${NC}"
     echo ""
     
-    echo -e "${YELLOW}开始编译...${NC}"
+    echo -e "${YELLOW}Starting build...${NC}"
     mvn clean install -DskipTests
     
     echo ""
     echo -e "${GREEN}========================================${NC}"
-    echo -e "${GREEN}编译完成！${NC}"
+    echo -e "${GREEN}Build completed!${NC}"
     echo -e "${GREEN}========================================${NC}"
 }
 
-# 启动后端服务器
+# Start backend server
 start_backend() {
     if ! setup_java; then
-        echo -e "${RED}错误: 未找到 Java 21${NC}"
+        echo -e "${RED}Error: Java 21 not found${NC}"
         return 1
     fi
     
-    # 加载环境变量（如果失败会尝试自动创建）
+    # Load environment variables (will try to auto-create if failed)
     if ! load_env; then
-        echo -e "${YELLOW}警告: 环境变量配置不完整，使用默认值继续${NC}"
+        echo -e "${YELLOW}Warning: Environment variable configuration incomplete, continuing with defaults${NC}"
     fi
     
-    # 检查是否已在运行
+    # Check if already running
     if [ -f "$SERVER_PID" ]; then
         local pid=$(cat "$SERVER_PID")
         if ps -p "$pid" > /dev/null 2>&1; then
-            echo -e "${YELLOW}后端服务器已在运行 (PID: $pid)${NC}"
+            echo -e "${YELLOW}Backend server already running (PID: $pid)${NC}"
             return 0
         fi
     fi
     
-    # 检查 MySQL（可选，失败不会阻止启动）
-    echo -e "${BLUE}检查数据库...${NC}"
+    # Check MySQL (optional, failure won't prevent startup)
+    echo -e "${BLUE}Checking database...${NC}"
     if ! check_mysql; then
-        echo -e "${YELLOW}警告: 数据库检查失败，但将继续启动应用${NC}"
-        echo -e "${YELLOW}提示: 应用启动后会自动创建表结构，但数据库必须已存在${NC}"
+        echo -e "${YELLOW}Warning: Database check failed, but will continue to start application${NC}"
+        echo -e "${YELLOW}Tip: Application will auto-create table structure after startup, but database must exist${NC}"
     fi
     echo ""
     
     cd "$SERVER_DIR"
     
-    # 检查是否需要编译
+    # Check if compilation is needed
     if [ ! -d "target" ] || [ ! -f "target/asteritime-server-1.0.0.jar" ]; then
-        echo -e "${YELLOW}首次运行，正在编译后端...${NC}"
+        echo -e "${YELLOW}First run, compiling backend...${NC}"
         cd "$PROJECT_ROOT"
         mvn clean install -DskipTests
         cd "$SERVER_DIR"
     fi
     
-    echo -e "${YELLOW}启动后端服务器 (Spring Boot)...${NC}"
-    echo -e "${YELLOW}日志文件: $SERVER_LOG${NC}"
+    echo -e "${YELLOW}Starting backend server (Spring Boot)...${NC}"
+    echo -e "${YELLOW}Log file: $SERVER_LOG${NC}"
     
-    # 启动服务器
+    # Start server
     nohup mvn spring-boot:run > "$SERVER_LOG" 2>&1 &
     local pid=$!
     echo $pid > "$SERVER_PID"
     
-    echo -e "${GREEN}后端服务器已启动 (PID: $pid)${NC}"
-    echo -e "${YELLOW}等待后端启动...${NC}"
+    echo -e "${GREEN}Backend server started (PID: $pid)${NC}"
+    echo -e "${YELLOW}Waiting for backend to start...${NC}"
     
-    # 等待服务器启动
+    # Wait for server to start
     local max_attempts=30
     local attempt=0
     while [ $attempt -lt $max_attempts ]; do
         if curl -s http://localhost:8080/api/auth/login > /dev/null 2>&1; then
-            echo -e "${GREEN}✓ 后端服务器启动成功！${NC}"
+            echo -e "${GREEN}✓ Backend server started successfully!${NC}"
             return 0
         fi
         sleep 1
@@ -364,21 +364,21 @@ start_backend() {
     done
     
     echo ""
-    echo -e "${YELLOW}后端服务器启动中，请查看日志: $SERVER_LOG${NC}"
+    echo -e "${YELLOW}Backend server starting, please check logs: $SERVER_LOG${NC}"
     return 0
 }
 
-# 启动前端服务器
+# Start frontend server
 start_frontend() {
-    # 检查 Node.js 和 npm
+    # Check Node.js and npm
     if ! command -v node &> /dev/null; then
-        echo -e "${RED}错误: Node.js 未安装${NC}"
-        echo -e "${YELLOW}请安装 Node.js: https://nodejs.org/${NC}"
+        echo -e "${RED}Error: Node.js not installed${NC}"
+        echo -e "${YELLOW}Please install Node.js: https://nodejs.org/${NC}"
         return 1
     fi
     
     if ! command -v npm &> /dev/null; then
-        echo -e "${RED}错误: npm 未安装${NC}"
+        echo -e "${RED}Error: npm not installed${NC}"
         return 1
     fi
     
@@ -386,36 +386,36 @@ start_frontend() {
     if [ -f "$CLIENT_PID" ]; then
         local pid=$(cat "$CLIENT_PID")
         if ps -p "$pid" > /dev/null 2>&1; then
-            echo -e "${YELLOW}前端服务器已在运行 (PID: $pid)${NC}"
+            echo -e "${YELLOW}Frontend server already running (PID: $pid)${NC}"
             return 0
         fi
     fi
     
     cd "$CLIENT_DIR"
     
-    # 检查 node_modules 是否存在
+    # Check if node_modules exists
     if [ ! -d "node_modules" ]; then
-        echo -e "${YELLOW}首次运行，正在安装前端依赖...${NC}"
+        echo -e "${YELLOW}First run, installing frontend dependencies...${NC}"
         npm install
     fi
     
-    echo -e "${YELLOW}启动前端服务器 (React)...${NC}"
-    echo -e "${YELLOW}日志文件: $CLIENT_LOG${NC}"
+    echo -e "${YELLOW}Starting frontend server (React)...${NC}"
+    echo -e "${YELLOW}Log file: $CLIENT_LOG${NC}"
     
-    # 启动前端服务器
+    # Start frontend server
     nohup npm start > "$CLIENT_LOG" 2>&1 &
     local pid=$!
     echo $pid > "$CLIENT_PID"
     
-    echo -e "${GREEN}前端服务器已启动 (PID: $pid)${NC}"
-    echo -e "${YELLOW}等待前端启动...${NC}"
+    echo -e "${GREEN}Frontend server started (PID: $pid)${NC}"
+    echo -e "${YELLOW}Waiting for frontend to start...${NC}"
     
-    # 等待前端启动
+    # Wait for frontend to start
     local max_attempts=30
     local attempt=0
     while [ $attempt -lt $max_attempts ]; do
         if curl -s http://localhost:3000 > /dev/null 2>&1; then
-            echo -e "${GREEN}✓ 前端服务器启动成功！${NC}"
+            echo -e "${GREEN}✓ Frontend server started successfully!${NC}"
             return 0
         fi
         sleep 1
@@ -424,190 +424,190 @@ start_frontend() {
     done
     
     echo ""
-    echo -e "${YELLOW}前端服务器启动中，请查看日志: $CLIENT_LOG${NC}"
+    echo -e "${YELLOW}Frontend server starting, please check logs: $CLIENT_LOG${NC}"
     return 0
 }
 
-# 启动后端服务器（单独）
+# Start backend server (standalone)
 cmd_backend() {
     echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}启动后端服务器${NC}"
+    echo -e "${BLUE}Starting Backend Server${NC}"
     echo -e "${BLUE}========================================${NC}"
     echo ""
     
     if ! start_backend; then
-        echo -e "${RED}后端启动失败，请查看日志: $SERVER_LOG${NC}"
+        echo -e "${RED}Backend startup failed, please check logs: $SERVER_LOG${NC}"
         exit 1
     fi
     
     echo ""
     echo -e "${GREEN}========================================${NC}"
-    echo -e "${GREEN}后端服务器启动成功！${NC}"
+    echo -e "${GREEN}Backend Server Started Successfully!${NC}"
     echo -e "${GREEN}========================================${NC}"
     echo ""
-    echo -e "${GREEN}后端 API:${NC}  http://localhost:8080/api"
-    echo -e "${GREEN}日志文件:${NC}  $SERVER_LOG"
+    echo -e "${GREEN}Backend API:${NC}  http://localhost:8080/api"
+    echo -e "${GREEN}Log file:${NC}  $SERVER_LOG"
     echo ""
-    echo -e "${YELLOW}提示:${NC}"
-    echo -e "  - 在另一个终端运行 './asteritime.sh frontend' 启动前端"
-    echo -e "  - 使用 './asteritime.sh logs -f' 查看实时日志"
-    echo -e "  - 使用 './asteritime.sh stop:backend' 停止后端"
+    echo -e "${YELLOW}Tips:${NC}"
+    echo -e "  - Run './asteritime.sh frontend' in another terminal to start frontend"
+    echo -e "  - Use './asteritime.sh logs -f' to view real-time logs"
+    echo -e "  - Use './asteritime.sh stop:backend' to stop backend"
 }
 
-# 启动前端服务器（单独）
+# Start frontend server (standalone)
 cmd_frontend() {
     echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}启动前端服务器${NC}"
+    echo -e "${BLUE}Starting Frontend Server${NC}"
     echo -e "${BLUE}========================================${NC}"
     echo ""
     
     if ! start_frontend; then
-        echo -e "${RED}前端启动失败，请查看日志: $CLIENT_LOG${NC}"
+        echo -e "${RED}Frontend startup failed, please check logs: $CLIENT_LOG${NC}"
         exit 1
     fi
     
     echo ""
     echo -e "${GREEN}========================================${NC}"
-    echo -e "${GREEN}前端服务器启动成功！${NC}"
+    echo -e "${GREEN}Frontend Server Started Successfully!${NC}"
     echo -e "${GREEN}========================================${NC}"
     echo ""
-    echo -e "${GREEN}前端应用:${NC}  http://localhost:3000"
-    echo -e "${GREEN}日志文件:${NC}  $CLIENT_LOG"
+    echo -e "${GREEN}Frontend app:${NC}  http://localhost:3000"
+    echo -e "${GREEN}Log file:${NC}  $CLIENT_LOG"
     echo ""
-    echo -e "${YELLOW}提示:${NC}"
-    echo -e "  - 确保后端已启动: './asteritime.sh backend'"
-    echo -e "  - 使用 './asteritime.sh logs frontend -f' 查看实时日志"
-    echo -e "  - 使用 './asteritime.sh stop:frontend' 停止前端"
+    echo -e "${YELLOW}Tips:${NC}"
+    echo -e "  - Ensure backend is started: './asteritime.sh backend'"
+    echo -e "  - Use './asteritime.sh logs frontend -f' to view real-time logs"
+    echo -e "  - Use './asteritime.sh stop:frontend' to stop frontend"
 }
 
-# 启动开发服务器（后端 + 前端，后台运行）
+# Start development servers (backend + frontend, background)
 cmd_dev() {
     echo -e "${BLUE}========================================${NC}"
-    echo -e "${BLUE}启动开发服务器（后端 + 前端，后台运行）${NC}"
+    echo -e "${BLUE}Starting Development Servers (Backend + Frontend, Background)${NC}"
     echo -e "${BLUE}========================================${NC}"
     echo ""
-    echo -e "${YELLOW}提示: 推荐使用以下方式分别启动，便于调试:${NC}"
-    echo -e "  终端1: ./asteritime.sh backend"
-    echo -e "  终端2: ./asteritime.sh frontend"
+    echo -e "${YELLOW}Tip: Recommended to start separately for easier debugging:${NC}"
+    echo -e "  Terminal 1: ./asteritime.sh backend"
+    echo -e "  Terminal 2: ./asteritime.sh frontend"
     echo ""
-    read -p "是否继续后台启动? (y/n) " -n 1 -r
+    read -p "Continue with background startup? (y/n) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}已取消${NC}"
+        echo -e "${YELLOW}Cancelled${NC}"
         exit 0
     fi
     echo ""
     
-    # 启动后端
-    echo -e "${BLUE}[1/2] 启动后端服务器...${NC}"
+    # Start backend
+    echo -e "${BLUE}[1/2] Starting backend server...${NC}"
     if ! start_backend; then
-        echo -e "${RED}后端启动失败，请查看日志: $SERVER_LOG${NC}"
+        echo -e "${RED}Backend startup failed, please check logs: $SERVER_LOG${NC}"
         exit 1
     fi
     echo ""
     
-    # 启动前端
-    echo -e "${BLUE}[2/2] 启动前端服务器...${NC}"
+    # Start frontend
+    echo -e "${BLUE}[2/2] Starting frontend server...${NC}"
     if ! start_frontend; then
-        echo -e "${RED}前端启动失败，请查看日志: $CLIENT_LOG${NC}"
+        echo -e "${RED}Frontend startup failed, please check logs: $CLIENT_LOG${NC}"
         exit 1
     fi
     echo ""
     
     echo -e "${GREEN}========================================${NC}"
-    echo -e "${GREEN}所有服务启动成功！${NC}"
+    echo -e "${GREEN}All Services Started Successfully!${NC}"
     echo -e "${GREEN}========================================${NC}"
     echo ""
-    echo -e "${GREEN}后端 API:${NC}  http://localhost:8080/api"
-    echo -e "${GREEN}前端应用:${NC}  http://localhost:3000"
+    echo -e "${GREEN}Backend API:${NC}  http://localhost:8080/api"
+    echo -e "${GREEN}Frontend app:${NC}  http://localhost:3000"
     echo ""
-    echo -e "${YELLOW}使用以下命令查看日志:${NC}"
-    echo -e "  ./asteritime.sh logs          # 后端日志"
-    echo -e "  ./asteritime.sh logs -f       # 实时跟踪后端日志"
-    echo -e "  ./asteritime.sh logs frontend  # 前端日志"
-    echo -e "${YELLOW}使用以下命令停止服务:${NC}"
+    echo -e "${YELLOW}Use the following commands to view logs:${NC}"
+    echo -e "  ./asteritime.sh logs          # Backend logs"
+    echo -e "  ./asteritime.sh logs -f       # Real-time backend logs"
+    echo -e "  ./asteritime.sh logs frontend  # Frontend logs"
+    echo -e "${YELLOW}Use the following commands to stop services:${NC}"
     echo -e "  ./asteritime.sh stop"
 }
 
-# 停止后端服务器
+# Stop backend server
 cmd_stop_backend() {
-    echo -e "${YELLOW}停止后端服务器...${NC}"
+    echo -e "${YELLOW}Stopping backend server...${NC}"
     
     if [ -f "$SERVER_PID" ]; then
         local pid=$(cat "$SERVER_PID")
         if ps -p "$pid" > /dev/null 2>&1; then
             kill "$pid"
-            echo -e "${GREEN}后端服务器已停止 (PID: $pid)${NC}"
+            echo -e "${GREEN}Backend server stopped (PID: $pid)${NC}"
         else
-            echo -e "${YELLOW}后端服务器进程不存在${NC}"
+            echo -e "${YELLOW}Backend server process does not exist${NC}"
         fi
         rm -f "$SERVER_PID"
     else
-        echo -e "${YELLOW}未找到运行中的后端服务器${NC}"
+        echo -e "${YELLOW}No running backend server found${NC}"
     fi
 }
 
-# 停止前端服务器
+# Stop frontend server
 cmd_stop_frontend() {
-    echo -e "${YELLOW}停止前端服务器...${NC}"
+    echo -e "${YELLOW}Stopping frontend server...${NC}"
     
     if [ -f "$CLIENT_PID" ]; then
         local pid=$(cat "$CLIENT_PID")
         if ps -p "$pid" > /dev/null 2>&1; then
             kill "$pid"
-            echo -e "${GREEN}前端服务器已停止 (PID: $pid)${NC}"
+            echo -e "${GREEN}Frontend server stopped (PID: $pid)${NC}"
         else
-            echo -e "${YELLOW}前端服务器进程不存在${NC}"
+            echo -e "${YELLOW}Frontend server process does not exist${NC}"
         fi
         rm -f "$CLIENT_PID"
     else
-        echo -e "${YELLOW}未找到运行中的前端服务器${NC}"
+        echo -e "${YELLOW}No running frontend server found${NC}"
     fi
 }
 
-# 停止所有开发服务器
+# Stop all development servers
 cmd_stop() {
-    echo -e "${YELLOW}停止所有开发服务器...${NC}"
+    echo -e "${YELLOW}Stopping all development servers...${NC}"
     
     local stopped=0
     
-    # 停止后端
+    # Stop backend
     if [ -f "$SERVER_PID" ]; then
         local pid=$(cat "$SERVER_PID")
         if ps -p "$pid" > /dev/null 2>&1; then
             kill "$pid"
-            echo -e "${GREEN}后端服务器已停止 (PID: $pid)${NC}"
+            echo -e "${GREEN}Backend server stopped (PID: $pid)${NC}"
             stopped=1
         fi
         rm -f "$SERVER_PID"
     fi
     
-    # 停止前端
+    # Stop frontend
     if [ -f "$CLIENT_PID" ]; then
         local pid=$(cat "$CLIENT_PID")
         if ps -p "$pid" > /dev/null 2>&1; then
             kill "$pid"
-            echo -e "${GREEN}前端服务器已停止 (PID: $pid)${NC}"
+            echo -e "${GREEN}Frontend server stopped (PID: $pid)${NC}"
             stopped=1
         fi
         rm -f "$CLIENT_PID"
     fi
     
     if [ $stopped -eq 0 ]; then
-        echo -e "${YELLOW}未找到运行中的服务器${NC}"
+        echo -e "${YELLOW}No running servers found${NC}"
     else
-        echo -e "${GREEN}所有服务已停止！${NC}"
+        echo -e "${GREEN}All services stopped!${NC}"
     fi
 }
 
-# 查看应用日志
+# View application logs
 cmd_logs() {
     local log_type=${1:-backend}
     local follow=${2:-}
     
     if [ "$log_type" == "frontend" ] || [ "$log_type" == "client" ]; then
         if [ ! -f "$CLIENT_LOG" ]; then
-            echo -e "${YELLOW}前端日志文件不存在: $CLIENT_LOG${NC}"
+            echo -e "${YELLOW}Frontend log file does not exist: $CLIENT_LOG${NC}"
             return 1
         fi
         
@@ -618,7 +618,7 @@ cmd_logs() {
         fi
     else
         if [ ! -f "$SERVER_LOG" ]; then
-            echo -e "${YELLOW}后端日志文件不存在: $SERVER_LOG${NC}"
+            echo -e "${YELLOW}Backend log file does not exist: $SERVER_LOG${NC}"
             return 1
         fi
         
@@ -630,94 +630,94 @@ cmd_logs() {
     fi
 }
 
-# 清理
+# Clean
 cmd_clean() {
-    echo -e "${YELLOW}清理编译产物和日志...${NC}"
+    echo -e "${YELLOW}Cleaning build artifacts and logs...${NC}"
     
-    # 停止服务器
+    # Stop servers
     if [ -f "$SERVER_PID" ]; then
         cmd_stop
     fi
     
-    # 清理 Maven 编译产物
-    echo -e "${YELLOW}清理 Maven 编译产物...${NC}"
+    # Clean Maven build artifacts
+    echo -e "${YELLOW}Cleaning Maven build artifacts...${NC}"
     cd "$PROJECT_ROOT"
     mvn clean
     
-    # 清理日志
+    # Clean logs
     if [ -f "$SERVER_LOG" ]; then
         rm -f "$SERVER_LOG"
-        echo -e "${GREEN}已删除后端日志文件${NC}"
+        echo -e "${GREEN}Deleted backend log file${NC}"
     fi
     
     if [ -f "$CLIENT_LOG" ]; then
         rm -f "$CLIENT_LOG"
-        echo -e "${GREEN}已删除前端日志文件${NC}"
+        echo -e "${GREEN}Deleted frontend log file${NC}"
     fi
     
-    # 清理 PID 文件
+    # Clean PID files
     rm -f "$SERVER_PID"
     rm -f "$CLIENT_PID"
     
-    echo -e "${GREEN}清理完成！${NC}"
+    echo -e "${GREEN}Clean completed!${NC}"
 }
 
-# 显示帮助信息
+# Show help information
 cmd_help() {
     cat << EOF
-${BLUE}AsteriTime 统一管理脚本${NC}
+${BLUE}AsteriTime Unified Management Script${NC}
 
-${GREEN}使用方法:${NC}
+${GREEN}Usage:${NC}
   ./asteritime.sh [command] [options]
 
-${GREEN}命令列表:${NC}
-  ${YELLOW}setup${NC}             初始环境配置（检查 Java、Maven、MySQL 等）
-  ${YELLOW}build${NC}             编译项目
-  ${YELLOW}backend${NC}           启动后端服务器（单独启动，推荐）
-  ${YELLOW}frontend${NC}          启动前端服务器（单独启动，推荐）
-  ${YELLOW}dev${NC}               启动开发服务器（后端 + 前端，后台运行）
-  ${YELLOW}stop${NC}              停止所有开发服务器
-  ${YELLOW}stop:backend${NC}      停止后端服务器
-  ${YELLOW}stop:frontend${NC}     停止前端服务器
-  ${YELLOW}logs${NC}              查看后端日志（添加 -f 实时跟踪）
-  ${YELLOW}logs frontend${NC}     查看前端日志（添加 -f 实时跟踪）
-  ${YELLOW}clean${NC}             清理编译产物和日志
-  ${YELLOW}help${NC}              显示此帮助信息
+${GREEN}Commands:${NC}
+  ${YELLOW}setup${NC}             Initial environment setup (check Java, Maven, MySQL, etc.)
+  ${YELLOW}build${NC}             Build project
+  ${YELLOW}backend${NC}           Start backend server (standalone, recommended)
+  ${YELLOW}frontend${NC}          Start frontend server (standalone, recommended)
+  ${YELLOW}dev${NC}               Start development servers (backend + frontend, background)
+  ${YELLOW}stop${NC}              Stop all development servers
+  ${YELLOW}stop:backend${NC}      Stop backend server
+  ${YELLOW}stop:frontend${NC}     Stop frontend server
+  ${YELLOW}logs${NC}              View backend logs (add -f for real-time tracking)
+  ${YELLOW}logs frontend${NC}     View frontend logs (add -f for real-time tracking)
+  ${YELLOW}clean${NC}             Clean build artifacts and logs
+  ${YELLOW}help${NC}              Show this help information
 
-${GREEN}示例:${NC}
-  # 首次使用：配置环境
+${GREEN}Examples:${NC}
+  # First time: configure environment
   ./asteritime.sh setup
 
-  # 编译项目
+  # Build project
   ./asteritime.sh build
 
-  # 启动开发服务器
+  # Start development servers
   ./asteritime.sh dev
 
-  # 查看日志
-  ./asteritime.sh logs             # 后端日志
-  ./asteritime.sh logs -f          # 实时跟踪后端日志
-  ./asteritime.sh logs frontend    # 前端日志
-  ./asteritime.sh logs frontend -f # 实时跟踪前端日志
+  # View logs
+  ./asteritime.sh logs             # Backend logs
+  ./asteritime.sh logs -f          # Real-time backend logs
+  ./asteritime.sh logs frontend    # Frontend logs
+  ./asteritime.sh logs frontend -f # Real-time frontend logs
 
-  # 清理
+  # Clean
   ./asteritime.sh clean
 
-${GREEN}环境变量:${NC}
-  配置文件: .env
-  模板文件: .env.example
+${GREEN}Environment Variables:${NC}
+  Config file: .env
+  Template file: .env.example
   
-  必需变量:
-    DB_USERNAME     数据库用户名（默认: root）
-    DB_PASSWORD     数据库密码
-    JWT_SECRET      JWT 密钥（生产环境必须设置）
+  Required variables:
+    DB_USERNAME     Database username (default: root)
+    DB_PASSWORD     Database password
+    JWT_SECRET      JWT secret (must be set in production)
 
-${GREEN}更多信息:${NC}
-  查看 docs/ 目录下的文档获取详细说明
+${GREEN}More Information:${NC}
+  See documentation in docs/ directory for detailed instructions
 EOF
 }
 
-# 主函数
+# Main function
 main() {
     local command=${1:-help}
     
@@ -756,7 +756,7 @@ main() {
             cmd_help
             ;;
         *)
-            echo -e "${RED}未知命令: $command${NC}"
+            echo -e "${RED}Unknown command: $command${NC}"
             echo ""
             cmd_help
             exit 1
@@ -764,5 +764,5 @@ main() {
     esac
 }
 
-# 执行主函数
+# Execute main function
 main "$@"

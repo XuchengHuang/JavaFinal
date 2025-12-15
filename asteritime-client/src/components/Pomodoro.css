@@ -174,7 +174,7 @@
   font-family: 'Courier New', monospace;
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 600px) {
   .pomodoro-content {
     padding: 40px 24px;

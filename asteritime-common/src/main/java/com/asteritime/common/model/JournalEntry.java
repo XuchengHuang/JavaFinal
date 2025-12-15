@@ -6,19 +6,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 日记条目
+ * Journal entry
  *
- * 用于记录用户的日记内容，支持：
- *   - 标题、文本内容
- *   - 图片（多个）
- *   - 天气、心情、活动分类
- *   - 语音记录
- *   - 日期（年月日）
- *   - 每个用户每天可以有多个日记条目
+ * Used to record user's journal content, supports:
+ *   - Title, text content
+ *   - Images (multiple)
+ *   - Weather, mood, activity classification
+ *   - Voice notes
+ *   - Date (year-month-day)
+ *   - Multiple entries per user per day allowed
  */
 @Entity
 @Table(name = "journal_entries")
-@JsonIgnoreProperties({"user"}) // 避免序列化User对象，防止循环引用和敏感信息泄露
+@JsonIgnoreProperties({"user"}) // Avoid serializing User object to prevent circular references and sensitive info leaks
 public class JournalEntry {
     
     @Id
@@ -26,76 +26,76 @@ public class JournalEntry {
     private Long id;
 
     /**
-     * 所属用户（外键关联到 users 表）
+     * Owner user (foreign key to users table)
      */
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
     /**
-     * 日期（仅年月日）
+     * Date (year-month-day only)
      */
     @Column(nullable = false)
     private LocalDate date;
     
     /**
-     * 日记标题
+     * Journal title
      */
     @Column(length = 255)
     private String title;
     
     /**
-     * 日记文本内容
+     * Journal text content
      */
     @Column(columnDefinition = "TEXT")
     private String contentText;
     
     /**
-     * 图片URL列表（JSON格式存储，例如：["url1", "url2"]）
+     * Image URL list (stored as JSON, e.g., ["url1", "url2"])
      */
     @Column(columnDefinition = "TEXT")
     private String imageUrls;
     
     /**
-     * 天气（例如：晴天、雨天、多云等）
+     * Weather (e.g., Sunny, Rainy, Cloudy)
      */
     @Column(length = 50)
     private String weather;
     
     /**
-     * 心情（例如：开心、难过、平静等）
+     * Mood (e.g., Happy, Sad, Calm)
      */
     @Column(length = 50)
     private String mood;
     
     /**
-     * 活动（例如：工作、学习、运动等）
+     * Activity (e.g., Work, Study, Exercise)
      */
     @Column(length = 50)
     private String activity;
     
     /**
-     * 语音记录URL
+     * Voice note URL
      */
     @Column(length = 500)
     private String voiceNoteUrl;
     
     /**
-     * 当天专注总时长（分钟）
-     * 默认值为 0（保留用于统计）
+     * Total focus minutes for the day
+     * Default value is 0 (reserved for statistics)
      */
     @Column(nullable = false)
     private Integer totalFocusMinutes = 0;
     
     /**
-     * 对这一天的评价 / 总结（可为空，保留向后兼容）
+     * Evaluation/summary for the day (can be null, kept for backward compatibility)
      */
     @Column(columnDefinition = "TEXT")
     private String evaluation;
     
     /**
-     * 乐观锁版本号（用于并发控制）
-     * 每次更新时自动递增，防止并发更新冲突
+     * Optimistic lock version (for concurrency control)
+     * Auto-increments on each update to prevent concurrent update conflicts
      */
     @Version
     @Column(nullable = false)

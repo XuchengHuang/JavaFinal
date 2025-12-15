@@ -3,32 +3,32 @@ import { authenticatedFetch } from './auth';
 import { API_BASE_URL } from '../config/api';
 
 /**
- * 获取所有任务类别
+ * Get all task categories
  * @returns {Promise<TaskCategory[]>}
  */
 export const getTaskCategories = async () => {
   const response = await authenticatedFetch(`${API_BASE_URL}/task-categories`);
   if (!response.ok) {
-    throw new Error('获取任务类别失败');
+    throw new Error('Failed to get task categories');
   }
   return await response.json();
 };
 
 /**
- * 获取所有重复规则
+ * Get all recurrence rules
  * @returns {Promise<TaskRecurrenceRule[]>}
  */
 export const getRecurrenceRules = async () => {
   const response = await authenticatedFetch(`${API_BASE_URL}/task-recurrence-rules`);
   if (!response.ok) {
-    throw new Error('获取重复规则失败');
+    throw new Error('Failed to get recurrence rules');
   }
   return await response.json();
 };
 
 /**
- * 创建任务
- * @param {object} taskData - 任务数据
+ * Create a task
+ * @param {object} taskData - Task data
  * @returns {Promise<Task>}
  */
 export const createTask = async (taskData) => {
@@ -39,15 +39,15 @@ export const createTask = async (taskData) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`创建任务失败: ${errorText}`);
+    throw new Error(`Failed to create task: ${errorText}`);
   }
 
   return await response.json();
 };
 
 /**
- * 获取任务列表
- * @param {object} filters - 查询条件
+ * Get task list
+ * @param {object} filters - Query filters
  * @returns {Promise<Task[]>}
  */
 export const getTasks = async (filters = {}) => {
@@ -62,16 +62,16 @@ export const getTasks = async (filters = {}) => {
   const response = await authenticatedFetch(url);
 
   if (!response.ok) {
-    throw new Error('获取任务列表失败');
+    throw new Error('Failed to get task list');
   }
 
   return await response.json();
 };
 
 /**
- * 更新任务
- * @param {number} taskId - 任务ID
- * @param {object} taskData - 要更新的任务数据
+ * Update a task
+ * @param {number} taskId - Task ID
+ * @param {object} taskData - Task data to update
  * @returns {Promise<Task>}
  */
 export const updateTask = async (taskId, taskData) => {
@@ -82,15 +82,15 @@ export const updateTask = async (taskId, taskData) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`更新任务失败: ${errorText}`);
+    throw new Error(`Failed to update task: ${errorText}`);
   }
 
   return await response.json();
 };
 
 /**
- * 删除任务
- * @param {number} taskId - 任务ID
+ * Delete a task
+ * @param {number} taskId - Task ID
  * @returns {Promise<void>}
  */
 export const deleteTask = async (taskId) => {
@@ -100,16 +100,15 @@ export const deleteTask = async (taskId) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`删除任务失败: ${errorText}`);
+    throw new Error(`Failed to delete task: ${errorText}`);
   }
 
-  // DELETE 请求成功返回 204 No Content，没有响应体
   return;
 };
 
 /**
- * 创建任务类别
- * @param {string} name - 类别名称
+ * Create a task category
+ * @param {string} name - Category name
  * @returns {Promise<TaskCategory>}
  */
 export const createTaskCategory = async (name) => {
@@ -120,15 +119,15 @@ export const createTaskCategory = async (name) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`创建任务类别失败: ${errorText}`);
+    throw new Error(`Failed to create task category: ${errorText}`);
   }
 
   return await response.json();
 };
 
 /**
- * 创建重复规则
- * @param {string} frequencyExpression - 频率表达式，如 "1/day", "2/week"
+ * Create a recurrence rule
+ * @param {string} frequencyExpression - Frequency expression, e.g. "1/day", "2/week"
  * @returns {Promise<TaskRecurrenceRule>}
  */
 export const createRecurrenceRule = async (frequencyExpression) => {
@@ -139,7 +138,7 @@ export const createRecurrenceRule = async (frequencyExpression) => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`创建重复规则失败: ${errorText}`);
+    throw new Error(`Failed to create recurrence rule: ${errorText}`);
   }
 
   return await response.json();

@@ -9,11 +9,11 @@ function Layout({ children }) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const user = getUser();
 
-  // 更新当前时间（每秒更新一次）
+  // Update current time (update every second)
   useEffect(() => {
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000); // 每秒更新
+    }, 1000); // Update every second
 
     return () => clearInterval(timeInterval);
   }, []);
@@ -23,8 +23,8 @@ function Layout({ children }) {
       await logout();
       navigate('/login');
     } catch (error) {
-      console.error('登出失败:', error);
-      // 即使登出请求失败，也清除本地 token 并跳转
+      console.error('Logout failed:', error);
+      // Even if logout request fails, clear local token and redirect
       navigate('/login');
     }
   };
@@ -35,7 +35,7 @@ function Layout({ children }) {
         <div className="header-left">
           <h1>AsteriTime Dashboard</h1>
           <div className="clock">
-            {currentTime.toLocaleTimeString('zh-CN', {
+            {currentTime.toLocaleTimeString('en-US', {
               hour12: false,
               hour: '2-digit',
               minute: '2-digit',
@@ -50,7 +50,7 @@ function Layout({ children }) {
             </span>
           )}
           <button onClick={handleLogout} className="logout-btn">
-            登出
+            Logout
           </button>
         </div>
       </div>

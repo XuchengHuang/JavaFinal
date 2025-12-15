@@ -3,9 +3,9 @@ import KanbanTaskItem from './KanbanTaskItem';
 import './KanbanColumn.css';
 
 /**
- * Kanban 列
- * @param {string} title - 列标题
- * @param {array} tasks - 该列的任务列表
+ * Kanban column
+ * @param {string} title - Column title
+ * @param {array} tasks - Task list for this column
  */
 function KanbanColumn({ title, tasks = [] }) {
   return (

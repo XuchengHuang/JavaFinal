@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 任务类别相关接口
+ * Task category REST API endpoints
  * 
- * 注意：所有接口都需要在 Header 中携带 token：Authorization: Bearer <token>
- * userId 会自动从 token 中提取，确保用户只能操作自己的类别
+ * Note: All endpoints require Authorization header: Bearer <token>
+ * userId is automatically extracted from token to ensure users can only operate their own categories
  */
 @RestController
 @RequestMapping("/task-categories")
@@ -25,13 +25,12 @@ public class TaskCategoryController {
     private TaskCategoryService taskCategoryService;
 
     /**
-     * 查询当前用户的所有类别
+     * Get all categories for current user
      * 
-     * URL:
-     *   GET /api/task-categories
-     *   Header: Authorization: Bearer <token>
+     * URL: GET /api/task-categories
+     * Header: Authorization: Bearer <token>
      * 
-     * 返回：当前用户的所有任务类别列表
+     * Returns: List of all task categories for current user
      */
     @GetMapping
     public ResponseEntity<List<TaskCategory>> getAllCategories(HttpServletRequest request) {
@@ -43,13 +42,12 @@ public class TaskCategoryController {
     }
 
     /**
-     * 根据 ID 查询类别（验证属于当前用户）
+     * Get category by ID (validates ownership)
      * 
-     * URL:
-     *   GET /api/task-categories/{id}
-     *   Header: Authorization: Bearer <token>
+     * URL: GET /api/task-categories/{id}
+     * Header: Authorization: Bearer <token>
      * 
-     * 返回：指定 ID 的类别，如果不存在或不属于当前用户则返回 404
+     * Returns: Category with specified ID, or 404 if not found or not owned by current user
      */
     @GetMapping("/{id}")
     public ResponseEntity<TaskCategory> getCategory(HttpServletRequest request, @PathVariable Long id) {
@@ -63,20 +61,17 @@ public class TaskCategoryController {
     }
 
     /**
-     * 创建新类别（自动关联到当前用户）
+     * Create new category (automatically associated with current user)
      * 
-     * URL:
-     *   POST /api/task-categories
-     *   Header: Authorization: Bearer <token>
+     * URL: POST /api/task-categories
+     * Header: Authorization: Bearer <token>
      * 
-     * 请求体示例：
+     * Request body example:
      *   {
-     *     "name": "工作"
+     *     "name": "Work"
      *   }
      * 
-     * 逻辑：
-     *   - 如果该用户下类别名称已存在，返回 400
-     *   - 否则创建新类别并返回
+     * Returns 400 if category name already exists for this user, otherwise creates and returns new category
      */
     @PostMapping
     public ResponseEntity<TaskCategory> createCategory(HttpServletRequest request,
@@ -92,7 +87,6 @@ public class TaskCategoryController {
 
         Optional<TaskCategory> created = taskCategoryService.create(userId, requestBody.getName().trim());
         if (!created.isPresent()) {
-            // 名称已存在
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
@@ -100,15 +94,13 @@ public class TaskCategoryController {
     }
 
     /**
-     * 删除类别（只能删除自己的类别）
+     * Delete category (only own categories)
      * 
-     * URL:
-     *   DELETE /api/task-categories/{id}
-     *   Header: Authorization: Bearer <token>
+     * URL: DELETE /api/task-categories/{id}
+     * Header: Authorization: Bearer <token>
      * 
-     * 逻辑：
-     *   - 如果类别不存在或不属于当前用户，返回 404
-     *   - 否则删除并返回 204
+     * Returns 404 if category doesn't exist or doesn't belong to current user,
+     * otherwise deletes and returns 204
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(HttpServletRequest request, @PathVariable Long id) {
@@ -124,10 +116,8 @@ public class TaskCategoryController {
         }
     }
 
-    // ====== DTO ======
-
     /**
-     * 用于接收创建类别的请求体
+     * Request body for creating category
      */
     public static class CreateCategoryRequest {
         private String name;

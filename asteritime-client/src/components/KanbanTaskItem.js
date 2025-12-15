@@ -2,15 +2,15 @@ import React from 'react';
 import './KanbanTaskItem.css';
 
 /**
- * Kanban 任务项（只显示任务名和时间范围，不可编辑）
- * @param {object} task - 任务对象
+ * Kanban task item (only displays task name and time range, not editable)
+ * @param {object} task - Task object
  */
 function KanbanTaskItem({ task }) {
   const formatTime = (timeString) => {
     if (!timeString) return null;
     try {
       const date = new Date(timeString);
-      return date.toLocaleTimeString('zh-CN', {
+      return date.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
@@ -31,9 +31,9 @@ function KanbanTaskItem({ task }) {
           {startTime && endTime ? (
             <span>{startTime} - {endTime}</span>
           ) : startTime ? (
-            <span>开始: {startTime}</span>
+            <span>Start: {startTime}</span>
           ) : (
-            <span>结束: {endTime}</span>
+            <span>End: {endTime}</span>
           )}
         </div>
       )}

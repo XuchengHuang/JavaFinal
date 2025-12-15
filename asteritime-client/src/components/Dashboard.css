@@ -110,7 +110,7 @@
   background-color: #0056b3;
 }
 
-/* 四象限区域 */
+/* Quadrant section */
 .quadrant-section {
   flex: 0 0 auto;
   margin-bottom: 30px;
@@ -126,7 +126,7 @@
   max-height: 750px;
 }
 
-/* Kanban 看板区域 */
+/* Kanban board section */
 .kanban-section {
   margin-top: 20px;
   flex: 0 0 auto;
@@ -141,7 +141,7 @@
   max-height: 400px;
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 1200px) {
   .quadrant-grid {
     min-height: 500px;

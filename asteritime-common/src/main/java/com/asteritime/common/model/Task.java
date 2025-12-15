@@ -6,7 +6,7 @@ import javax.validation.constraints.Min;
 import java.time.LocalDateTime;
 
 /**
- * 任务实体
+ * Task entity
  */
 @Entity
 @Table(name = "tasks")
@@ -22,8 +22,8 @@ public class Task {
     private String description;
     
     /**
-     * 四象限：1=Urgent/Important, 2=NotUrgent/Important,
-     *         3=Urgent/NotImportant, 4=NotUrgent/NotImportant
+     * Quadrant: 1=Urgent/Important, 2=NotUrgent/Important,
+     *           3=Urgent/NotImportant, 4=NotUrgent/NotImportant
      */
     @Min(1)
     @Max(4)
@@ -31,54 +31,54 @@ public class Task {
     private Integer quadrant;
     
     /**
-     * 任务类型（外键，引用任务类别）
+     * Task type (foreign key, references task category)
      */
     @ManyToOne
     @JoinColumn(name = "category_id")
     private TaskCategory type;
     
     /**
-     * 重复规则（外键，引用任务重复频率规则）
+     * Recurrence rule (foreign key, references task recurrence frequency rule)
      */
     @ManyToOne
     @JoinColumn(name = "recurrence_rule_id")
     private TaskRecurrenceRule recurrenceRule;
     
     /**
-     * 任务状态：
-     *   DELAY  - 延期 / 推迟
-     *   TODO   - 待办
-     *   DOING  - 进行中
-     *   DONE   - 已完成
-     *   CANCEL - 已取消
+     * Task status:
+     *   DELAY  - Delayed
+     *   TODO   - To do
+     *   DOING  - In progress
+     *   DONE   - Done
+     *   CANCEL - Cancelled
      */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TaskStatus status;
     
     /**
-     * 计划开始时间
+     * Planned start time
      */
     private LocalDateTime plannedStartTime;
     
     /**
-     * 计划结束时间
+     * Planned end time
      */
     private LocalDateTime plannedEndTime;
     
     /**
-     * 实际开始时间
+     * Actual start time
      */
     private LocalDateTime actualStartTime;
     
     /**
-     * 实际结束时间
+     * Actual end time
      */
     private LocalDateTime actualEndTime;
     
     /**
-     * 乐观锁版本号（用于并发控制）
-     * 每次更新时自动递增，防止并发更新冲突
+     * Optimistic lock version (for concurrency control)
+     * Auto-increments on each update to prevent concurrent update conflicts
      */
     @Version
     @Column(nullable = false)
@@ -126,7 +126,7 @@ public class Task {
     }
     
     /**
-     * 所属用户（外键关联到 users 表）
+     * Owner user (foreign key to users table)
      */
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
