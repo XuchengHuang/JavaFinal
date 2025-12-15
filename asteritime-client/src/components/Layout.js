@@ -21,11 +21,15 @@ function Layout({ children }) {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      // Dispatch custom event to notify App component
+      window.dispatchEvent(new Event('logout'));
+      // Use replace to avoid adding to history
+      navigate('/login', { replace: true });
     } catch (error) {
       console.error('Logout failed:', error);
       // Even if logout request fails, clear local token and redirect
-      navigate('/login');
+      window.dispatchEvent(new Event('logout'));
+      navigate('/login', { replace: true });
     }
   };
 

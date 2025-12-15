@@ -1,5 +1,6 @@
 package com.asteritime.common.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.persistence.*;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "tasks")
+@JsonIgnoreProperties({"user"}) // Avoid serializing User object to prevent circular references and sensitive info leaks
 public class Task {
     
     @Id

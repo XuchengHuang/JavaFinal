@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Layout from './components/Layout';
@@ -12,13 +12,38 @@ import { isAuthenticated } from './api/auth';
 import './App.css';
 
 function App() {
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+
+  // Check authentication status once on mount
+  useEffect(() => {
+    setAuthenticated(isAuthenticated());
+    setAuthChecked(true);
+  }, []);
+
+  // Listen for storage changes (when logout clears token)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setAuthenticated(isAuthenticated());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // Also listen for custom logout event
+    window.addEventListener('logout', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('logout', handleStorageChange);
+    };
+  }, []);
+
   return (
     <Router>
       <Routes>
         <Route
           path="/login"
           element={
-            isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />
+            !authChecked ? null : authenticated ? <Navigate to="/dashboard" replace /> : <Login />
           }
         />
         <Route

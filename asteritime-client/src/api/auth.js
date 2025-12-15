@@ -170,6 +170,32 @@ export const authenticatedFetch = async (url, options = {}) => {
       ...options,
       headers,
     });
+    
+    // Handle 401 Unauthorized - token missing, invalid, or expired
+    if (response.status === 401) {
+      // Clear invalid token
+      removeToken();
+      removeUser();
+      
+      // Dispatch logout event to notify components
+      window.dispatchEvent(new Event('logout'));
+      
+      // Redirect to login page if we're in a browser environment
+      if (typeof window !== 'undefined' && window.location) {
+        // Only redirect if not already on login page
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
+      
+      // Throw error with helpful message
+      const errorData = await response.json().catch(() => ({ error: 'Unauthorized' }));
+      const error = new Error(errorData.error || 'Authentication required. Please login again.');
+      error.status = 401;
+      error.isAuthError = true;
+      throw error;
+    }
+    
     return response;
   } catch (error) {
     // Handle network errors
