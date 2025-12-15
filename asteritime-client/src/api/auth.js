@@ -165,9 +165,20 @@ export const authenticatedFetch = async (url, options = {}) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  return fetch(url, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+    return response;
+  } catch (error) {
+    // Handle network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      const networkError = new Error('Network error: Cannot connect to server. Please check if the backend is running.');
+      networkError.isNetworkError = true;
+      throw networkError;
+    }
+    throw error;
+  }
 };
 

@@ -16,6 +16,9 @@ public class TaskCategoryService {
 
     @Autowired
     private TaskCategoryRepository taskCategoryRepository;
+    
+    @Autowired
+    private com.asteritime.server.repository.UserRepository userRepository;
 
     /**
      * Find all categories for a specific user
@@ -46,8 +49,9 @@ public class TaskCategoryService {
         TaskCategory category = new TaskCategory();
         category.setName(name);
         
-        User user = new User();
-        user.setId(userId);
+        // Load user entity (Hibernate needs a managed entity, not a transient one)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         category.setUser(user);
         
         return Optional.of(taskCategoryRepository.save(category));

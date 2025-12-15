@@ -21,13 +21,17 @@ public class JournalEntryService {
 
     @Autowired
     private JournalEntryRepository journalEntryRepository;
+    
+    @Autowired
+    private com.asteritime.server.repository.UserRepository userRepository;
 
     /**
      * Create a new journal entry
      */
     public JournalEntry createJournalEntry(Long userId, JournalEntry journalEntry) {
-        User user = new User();
-        user.setId(userId);
+        // Load user entity (Hibernate needs a managed entity, not a transient one)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         journalEntry.setUser(user);
         
         if (journalEntry.getDate() == null) {
@@ -194,8 +198,9 @@ public class JournalEntryService {
         entry.setDate(date);
         entry.setTotalFocusMinutes(0);
 
-        User user = new User();
-        user.setId(userId);
+        // Load user entity (Hibernate needs a managed entity, not a transient one)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         entry.setUser(user);
 
         return journalEntryRepository.save(entry);
@@ -216,8 +221,9 @@ public class JournalEntryService {
             entry.setDate(date);
             entry.setTotalFocusMinutes(focusMinutes);
 
-            User user = new User();
-            user.setId(userId);
+            // Load user entity (Hibernate needs a managed entity, not a transient one)
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
             entry.setUser(user);
             
             return journalEntryRepository.save(entry);

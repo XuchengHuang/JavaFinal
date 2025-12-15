@@ -9,7 +9,22 @@ import { API_BASE_URL } from '../config/api';
 export const getTaskCategories = async () => {
   const response = await authenticatedFetch(`${API_BASE_URL}/task-categories`);
   if (!response.ok) {
-    throw new Error('Failed to get task categories');
+    const errorText = await response.text();
+    let errorMessage = `Failed to get task categories (${response.status})`;
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (errorJson.error) {
+        errorMessage = errorJson.error;
+      }
+    } catch (e) {
+      // If response is not JSON, use the text as error message
+      if (errorText) {
+        errorMessage = errorText;
+      }
+    }
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    throw error;
   }
   return await response.json();
 };
@@ -21,7 +36,22 @@ export const getTaskCategories = async () => {
 export const getRecurrenceRules = async () => {
   const response = await authenticatedFetch(`${API_BASE_URL}/task-recurrence-rules`);
   if (!response.ok) {
-    throw new Error('Failed to get recurrence rules');
+    const errorText = await response.text();
+    let errorMessage = `Failed to get recurrence rules (${response.status})`;
+    try {
+      const errorJson = JSON.parse(errorText);
+      if (errorJson.error) {
+        errorMessage = errorJson.error;
+      }
+    } catch (e) {
+      // If response is not JSON, use the text as error message
+      if (errorText) {
+        errorMessage = errorText;
+      }
+    }
+    const error = new Error(errorMessage);
+    error.status = response.status;
+    throw error;
   }
   return await response.json();
 };

@@ -22,6 +22,15 @@ public class TaskService {
 
     @Autowired
     private TaskRepository taskRepository;
+    
+    @Autowired
+    private TaskCategoryService taskCategoryService;
+    
+    @Autowired
+    private TaskRecurrenceRuleService taskRecurrenceRuleService;
+    
+    @Autowired
+    private com.asteritime.server.repository.UserRepository userRepository;
 
     /**
      * Find all tasks for a specific user
@@ -94,6 +103,29 @@ public class TaskService {
         return taskRepository.findByIdAndUser_Id(id, userId);
     }
 
+    /**
+     * Load category if it exists and belongs to user
+     */
+    public com.asteritime.common.model.TaskCategory loadCategoryIfExists(Long categoryId, Long userId) {
+        return taskCategoryService.findByIdAndUserId(categoryId, userId).orElse(null);
+    }
+    
+    /**
+     * Load recurrence rule if it exists and belongs to user
+     */
+    public com.asteritime.common.model.TaskRecurrenceRule loadRecurrenceRuleIfExists(Long ruleId, Long userId) {
+        return taskRecurrenceRuleService.findByIdAndUserId(ruleId, userId).orElse(null);
+    }
+    
+    /**
+     * Load user reference (for Hibernate persistence)
+     * Uses findById to get the user entity, ensuring it exists
+     */
+    public com.asteritime.common.model.User loadUserReference(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+    }
+    
     /**
      * Save task (automatically associates with user in task)
      */

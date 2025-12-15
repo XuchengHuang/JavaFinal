@@ -154,18 +154,68 @@ public class TaskController {
      * Returns: Created task object (201 Created)
      */
     @PostMapping
-    public ResponseEntity<Task> createTask(HttpServletRequest request, @RequestBody Task task) {
+    public ResponseEntity<?> createTask(HttpServletRequest request, @RequestBody Task task) {
         Long userId = (Long) request.getAttribute("userId");
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         
-        User user = new User();
-        user.setId(userId);
-        task.setUser(user);
-        
-        Task created = taskService.save(task);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        try {
+            // Validate required fields
+            if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body("{\"error\":\"Task title is required\"}");
+            }
+            
+            if (task.getQuadrant() == null || task.getQuadrant() < 1 || task.getQuadrant() > 4) {
+                return ResponseEntity.badRequest()
+                        .body("{\"error\":\"Quadrant must be between 1 and 4\"}");
+            }
+            
+            if (task.getStatus() == null) {
+                task.setStatus(TaskStatus.TODO);
+            }
+            
+            // Validate and load TaskCategory if provided
+            if (task.getType() != null && task.getType().getId() != null) {
+                Long categoryId = task.getType().getId();
+                com.asteritime.common.model.TaskCategory category = 
+                    taskService.loadCategoryIfExists(categoryId, userId);
+                if (category == null) {
+                    return ResponseEntity.badRequest()
+                            .body("{\"error\":\"Task category not found or does not belong to current user\"}");
+                }
+                task.setType(category);
+            }
+            
+            // Validate and load TaskRecurrenceRule if provided
+            if (task.getRecurrenceRule() != null && task.getRecurrenceRule().getId() != null) {
+                Long ruleId = task.getRecurrenceRule().getId();
+                com.asteritime.common.model.TaskRecurrenceRule rule = 
+                    taskService.loadRecurrenceRuleIfExists(ruleId, userId);
+                if (rule == null) {
+                    return ResponseEntity.badRequest()
+                            .body("{\"error\":\"Recurrence rule not found or does not belong to current user\"}");
+                }
+                task.setRecurrenceRule(rule);
+            }
+            
+            // Load user reference (Hibernate needs a managed entity, not a transient one)
+            User user = taskService.loadUserReference(userId);
+            task.setUser(user);
+            
+            Task created = taskService.save(task);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+            
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest()
+                    .body("{\"error\":\"Invalid data: " + e.getMessage() + "\"}");
+        } catch (Exception e) {
+            // Log the exception for debugging
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\":\"Failed to create task: " + e.getMessage() + "\"}");
+        }
     }
     
     /**

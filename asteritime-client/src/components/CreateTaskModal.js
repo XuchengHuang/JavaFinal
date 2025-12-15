@@ -37,16 +37,31 @@ function CreateTaskModal({ isOpen, onClose, onSuccess }) {
 
   const loadOptions = async () => {
     setLoadingOptions(true);
+    setError(''); // Clear previous errors
     try {
       const [cats, rules] = await Promise.all([
         getTaskCategories(),
         getRecurrenceRules(),
       ]);
-      setCategories(cats);
-      setRecurrenceRules(rules);
+      setCategories(cats || []);
+      setRecurrenceRules(rules || []);
     } catch (err) {
       console.error('Failed to load options:', err);
-      setError('Failed to load options, please refresh and try again');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to load options, please refresh and try again';
+      
+      if (err.message) {
+        if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+          errorMessage = 'Authentication failed. Please log out and log in again.';
+        } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+          errorMessage = 'Cannot connect to server. Please check if the backend is running.';
+        } else if (err.message.includes('Failed to get')) {
+          errorMessage = `Failed to load data: ${err.message}`;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoadingOptions(false);
     }

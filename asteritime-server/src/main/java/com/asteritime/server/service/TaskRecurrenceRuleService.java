@@ -16,6 +16,9 @@ public class TaskRecurrenceRuleService {
 
     @Autowired
     private TaskRecurrenceRuleRepository taskRecurrenceRuleRepository;
+    
+    @Autowired
+    private com.asteritime.server.repository.UserRepository userRepository;
 
     /**
      * Find all recurrence rules for a specific user
@@ -46,8 +49,9 @@ public class TaskRecurrenceRuleService {
         TaskRecurrenceRule rule = new TaskRecurrenceRule();
         rule.setFrequencyExpression(frequencyExpression);
         
-        User user = new User();
-        user.setId(userId);
+        // Load user entity (Hibernate needs a managed entity, not a transient one)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         rule.setUser(user);
         
         return Optional.of(taskRecurrenceRuleRepository.save(rule));
