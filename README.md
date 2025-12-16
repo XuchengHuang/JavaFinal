@@ -2,7 +2,7 @@
 
 **Links:**
 -  [GitHub Repository](https://github.com/XuchengHuang/JavaFinal) 
--  [Video Demo]()
+-  [Video Demo](https://youtu.be/at1xhH9NS10)
 
 ## Project Overview
 
